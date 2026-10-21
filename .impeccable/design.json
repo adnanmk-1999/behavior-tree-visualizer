@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T00:00:00Z",
+  "title": "Design System: Behavior Tree Visualizer",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Cobalt"
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Deep cobalt"
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Cobalt wash"
+      },
+      "navy": {
+        "role": "neutral",
+        "displayName": "Midnight navy"
+      },
+      "page": {
+        "role": "neutral",
+        "displayName": "Cool page"
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Ice-blue canvas"
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "White working surface"
+      },
+      "surface-soft": {
+        "role": "neutral",
+        "displayName": "Soft working surface"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Navy ink"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted slate"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Panel line"
+      }
+    },
+    "typographyMeta": {
+      "title": {
+        "displayName": "Tree title",
+        "purpose": "Current tree definition heading."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default workspace and inspector text."
+      },
+      "control": {
+        "displayName": "Control label",
+        "purpose": "Shared button labels."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Timeline labels, graph footer, and supporting notes."
+      },
+      "node-name": {
+        "displayName": "Node name",
+        "purpose": "Two-line name inside fixed graph nodes."
+      },
+      "node-type": {
+        "displayName": "Node type",
+        "purpose": "Registered type inside graph nodes."
+      },
+      "code": {
+        "displayName": "Inspector code",
+        "purpose": "Inspector XML values; paths elsewhere inherit their local size."
+      }
+    },
+    "shadows": [
+      {
+        "name": "running-node-ring",
+        "value": "inset 0 0 0 2px #a16207",
+        "purpose": "Recorded RUNNING state; panels have no ambient shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-feedback",
+        "value": "background-color 140ms ease, border-color 140ms ease",
+        "purpose": "Shared button state feedback."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "none",
+        "purpose": "prefers-reduced-motion: reduce disables animations and transitions; scroll behavior becomes auto."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "legend",
+        "value": "1150px"
+      },
+      {
+        "name": "tree-navigation",
+        "value": "1100px"
+      },
+      {
+        "name": "stacked-inspector",
+        "value": "1000px"
+      },
+      {
+        "name": "stacked-timeline",
+        "value": "700px"
+      },
+      {
+        "name": "compact-workspace",
+        "value": "600px"
+      },
+      {
+        "name": "narrow-playback",
+        "value": "380px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary playback button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Shared primary control.",
+      "html": "<button type=\"button\" class=\"ds-button-primary\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"m8 5 11 7-11 7Z\"/></svg>Play</button>",
+      "css": ".ds-button-primary {display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: .5rem .75rem; border: 1px solid var(--line, #d7e0ea); border-radius: 6px; background: var(--surface, #fff); color: var(--ink, #182b45); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: .875rem; font-weight: 600; line-height: 1.25; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease;} .ds-button-primary:hover:not(:disabled) {border-color: #91a4bd; background: var(--surface-soft, #f4f7fb);} .ds-button-primary:active:not(:disabled) {background: #e5ebf3;} .ds-button-primary {color: #fff; background: var(--accent, #245dcc); border-color: var(--accent, #245dcc);} .ds-button-primary:hover:not(:disabled), .ds-button-primary:active:not(:disabled) {color: #fff; background: var(--accent-hover, #184ba9); border-color: var(--accent-hover, #184ba9);} .ds-button-primary:focus-visible {outline: 3px solid var(--accent, #245dcc); outline-offset: 3px;} .ds-button-primary:disabled {color: #69798c; background: #edf1f6; border-color: #e0e6ee; cursor: not-allowed;} @media (max-width: 600px) {.ds-button-primary {min-height: 44px;}} @media (prefers-reduced-motion: reduce) {.ds-button-primary {transition: none;}}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Bordered control for direct workspace actions.",
+      "html": "<button type=\"button\" class=\"ds-button-secondary\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5M8 8h8v8H8z\"/></svg>Fit tree</button>",
+      "css": ".ds-button-secondary {display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: .5rem .75rem; border: 1px solid var(--line, #d7e0ea); border-radius: 6px; background: var(--surface, #fff); color: var(--ink, #182b45); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: .875rem; font-weight: 600; line-height: 1.25; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease;} .ds-button-secondary:hover:not(:disabled) {border-color: #91a4bd; background: var(--surface-soft, #f4f7fb);} .ds-button-secondary:active:not(:disabled) {background: #e5ebf3;} .ds-button-secondary:focus-visible {outline: 3px solid var(--accent, #245dcc); outline-offset: 3px;} .ds-button-secondary:disabled {color: #69798c; background: #edf1f6; border-color: #e0e6ee; cursor: not-allowed;} @media (max-width: 600px) {.ds-button-secondary {min-height: 44px;}} @media (prefers-reduced-motion: reduce) {.ds-button-secondary {transition: none;}}"
+    },
+    {
+      "name": "Quiet button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Shared quiet control.",
+      "html": "<button type=\"button\" class=\"ds-button-quiet\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 10a9 9 0 1 1 2 8M3 4v6h6\"/></svg>Reset</button>",
+      "css": ".ds-button-quiet {display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 40px; padding: .5rem .75rem; border: 1px solid var(--line, #d7e0ea); border-radius: 6px; background: var(--surface, #fff); color: var(--ink, #182b45); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: .875rem; font-weight: 600; line-height: 1.25; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease;} .ds-button-quiet:hover:not(:disabled) {border-color: #91a4bd; background: var(--surface-soft, #f4f7fb);} .ds-button-quiet:active:not(:disabled) {background: #e5ebf3;} .ds-button-quiet {background: transparent; border-color: transparent;} .ds-button-quiet:focus-visible {outline: 3px solid var(--accent, #245dcc); outline-offset: 3px;} .ds-button-quiet:disabled {color: #69798c; background: #edf1f6; border-color: #e0e6ee; cursor: not-allowed;} @media (max-width: 600px) {.ds-button-quiet {min-height: 44px;}} @media (prefers-reduced-motion: reduce) {.ds-button-quiet {transition: none;}}"
+    },
+    {
+      "name": "Playback speed select",
+      "kind": "input",
+      "refersTo": "select",
+      "description": "Native labeled select; the same control style is used for subtree visibility.",
+      "html": "<label class=\"ds-speed\">Speed <select class=\"ds-select\" aria-label=\"Playback speed\"><option>0.5\u00d7</option><option selected>1\u00d7</option><option>2\u00d7</option><option>4\u00d7</option></select></label>",
+      "css": ".ds-speed {display: inline-flex; align-items: center; gap: .5rem; color: var(--muted, #53647a); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: .875rem;} .ds-select {min-height: 40px; min-width: 4.5rem; padding: .4rem .5rem; border: 1px solid var(--line, #d7e0ea); border-radius: 6px; background: var(--surface, #fff); color: var(--ink, #182b45); font: inherit; cursor: pointer;} .ds-select:hover:not(:disabled) {border-color: #91a4bd;} .ds-select:focus-visible {outline: 3px solid var(--accent, #245dcc); outline-offset: 3px;} .ds-select:disabled {cursor: not-allowed;} @media (max-width: 600px) {.ds-select {min-height: 44px;}} @media (max-width: 380px) {.ds-speed {flex-direction: column; align-items: flex-start; gap: .125rem;}}"
+    },
+    {
+      "name": "Tree breadcrumbs",
+      "kind": "nav",
+      "refersTo": "breadcrumb",
+      "description": "Exact tree identifiers with a marked current page and horizontally scrollable overflow.",
+      "html": "<nav aria-label=\"Behavior tree navigation\"><ol class=\"ds-breadcrumbs\"><li><button type=\"button\" title=\"RobotTree\">RobotTree</button></li><li><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"m9 5 7 7-7 7\"/></svg><button type=\"button\" aria-current=\"page\" title=\"BootupBody\">BootupBody</button></li></ol></nav>",
+      "css": ".ds-breadcrumbs {display: flex; align-items: center; gap: .25rem; list-style: none; padding: .25rem; margin: 0; min-width: 0; overflow-x: auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;} .ds-breadcrumbs li {display: flex; align-items: center; gap: .25rem; flex-shrink: 0;} .ds-breadcrumbs svg {width: 14px; color: var(--muted, #53647a);} .ds-breadcrumbs button {max-width: 25ch; min-height: 40px; padding: .375rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 0; border-radius: 4px; color: var(--muted, #53647a); background: transparent; font-family: inherit; font-size: .875rem; line-height: 1.5; cursor: pointer;} .ds-breadcrumbs button:hover {color: var(--accent, #245dcc); background: var(--accent-soft, #eaf1ff);} .ds-breadcrumbs button:focus-visible {outline: 3px solid var(--accent, #245dcc); outline-offset: 3px;} .ds-breadcrumbs [aria-current=\"page\"] {font-weight: 650; color: var(--ink, #182b45);}"
+    },
+    {
+      "name": "Behavior tree node",
+      "kind": "card",
+      "refersTo": "behavior-tree-node",
+      "description": "Control-node specimen with independent category border, RUNNING status, and selection outline. The graph owns position and zoom.",
+      "html": "<div class=\"ds-node ds-running\" tabindex=\"0\" aria-label=\"top_level, Control, RUNNING\"><div class=\"ds-node-heading\"><div class=\"ds-category\">Control</div><span class=\"ds-status\">RUNNING</span></div><strong class=\"ds-node-name\" title=\"top_level\">top_level</strong><span class=\"ds-node-type\" title=\"ReactiveSequence\">ReactiveSequence</span><div class=\"ds-node-footer\"><span title=\"2\">UID 2</span></div></div>",
+      "css": ".ds-node {box-sizing: border-box; width: 360px; height: 208px; padding: 7px 9px; display: flex; flex-direction: column; gap: 6px; border: 8px solid #1d4ed8; border-radius: 12px; background: #fff; color: #182b45; text-align: left; cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;} .ds-node-heading {display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 30px; flex-shrink: 0;} .ds-category {color: #1d4ed8; font-size: 16px; font-weight: 600; line-height: 24px;} .ds-status {flex-shrink: 0; border: 1px solid #a16207; border-radius: 3px; padding: 2px 6px; background: #facc15; color: #422006; font-size: 16px; font-weight: 600; line-height: 24px;} .ds-node-name {display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; height: 60px; flex-shrink: 0; font-size: 24px; font-weight: 700; line-height: 30px;} .ds-node-type {overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 18px; line-height: 24px; color: #475569;} .ds-node-footer {display: flex; align-items: center; gap: 6px; margin-top: auto; min-height: 36px; font-size: 16px; line-height: 24px; border-top: 1px solid #d7e0ea;} .ds-node:hover {outline: 1px solid #1d4ed8; outline-offset: 2px;} .ds-node.ds-running {background: #fffbeb; box-shadow: inset 0 0 0 2px #a16207;} .ds-running .ds-node-type {color: #713f12;} .ds-node.ds-selected {outline: 2px solid #172033; outline-offset: 3px;} .ds-node:focus-visible {outline: 3px solid var(--ink, #182b45); outline-offset: 4px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Technical Atlas",
+    "overview": "A precise engineering workspace with a midnight navy shell, an ice-blue canvas, white working surfaces, and cobalt controls. Compact controls support close inspection; the graph carries the visual weight.\n\nBorders, aligned labels, and restrained spacing organize the interface. Category, recorded execution, and selection remain independently readable. Authored SVG icons accompany labels; this redesign adds no raster assets or external fonts.",
+    "keyCharacteristics": [
+      "Graph-first engineering workspace.",
+      "Compact controls and detailed inspection.",
+      "Separate category, status, and selection cues.",
+      "Flat surfaces and short control feedback."
+    ],
+    "rules": [
+      {
+        "name": "The Independent Signals Rule",
+        "body": "Keep category on the thick node border and category label, execution in its text badge, and selection on an outer outline. A highlighted ancestor path does not change an ancestor's recorded status.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Node Rule",
+        "body": "Preserve node name/type sizes and the 16px category, status, and footer text at graph scale. Use Fit tree for the overview and Readable view for inspection.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do preserve the 360 \u00d7 208px node geometry, 8px category borders, and large node typography.",
+      "Do keep playback above the visualization, the legend below it, and definitions collapsed initially.",
+      "Do retain visible text for category and recorded status, keyboard focus, and accessible names for icon-only controls.",
+      "Do preserve exact XML identity, instance paths, and playback position through navigation."
+    ],
+    "donts": [
+      "Don't use category color to imply execution status or selection.",
+      "Don't treat \u201cNot observed\u201d as IDLE or fabricate status for an ancestor on a running path.",
+      "Don't add decorative panels, raster imagery, or motion that competes with the graph.",
+      "Don't shrink graph labels to compensate for the whole-tree overview; retain the Readable view action."
+    ]
+  }
+}

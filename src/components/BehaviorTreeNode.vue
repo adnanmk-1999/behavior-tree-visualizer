@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
+import AppIcon from '@/components/AppIcon.vue'
 import type { BehaviorTreeFlowNodeData } from '@/utils/behaviorTreeToFlow'
 import type { DisplayStatus } from '@/types/behaviorTreeEvents'
 
@@ -22,18 +23,7 @@ defineEmits<{ inspect: [] }>()
     <Handle type="target" :position="Position.Top" :connectable="false" />
     <div class="node-heading">
       <div class="category">
-        <svg
-          v-if="data.tag === 'SubTree'"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          aria-hidden="true"
-        >
-          <path d="M3 7V5h6l2 2h10v13H3Z" />
-        </svg>
+        <AppIcon v-if="data.tag === 'SubTree'" name="folder" />
         {{ data.category }}
       </div>
       <span class="execution-status" :data-status="status" title="Recorded execution status">
@@ -47,7 +37,7 @@ defineEmits<{ inspect: [] }>()
         UID {{ data.idSource === 'uid' ? data._uid : 'not provided' }}
       </span>
       <template v-if="data.tag === 'SubTree'">
-        <span class="open-subtree">Open subtree ↗</span>
+        <span class="open-subtree">Open subtree <AppIcon name="chevron" /></span>
         <button
           type="button"
           class="nodrag nopan"
@@ -77,9 +67,9 @@ defineEmits<{ inspect: [] }>()
   flex-direction: column;
   gap: 6px;
   border: 8px solid var(--category-color);
-  border-radius: 4px;
+  border-radius: 12px;
   background: #fff;
-  color: #172033;
+  color: #182b45;
   text-align: left;
   cursor: pointer;
 }
@@ -92,6 +82,12 @@ defineEmits<{ inspect: [] }>()
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
+}
+
+.category .app-icon,
+.open-subtree .app-icon {
+  width: 16px;
+  height: 16px;
 }
 
 .node-heading {
@@ -136,12 +132,16 @@ defineEmits<{ inspect: [] }>()
   min-height: 36px;
   font-size: 16px;
   line-height: 24px;
+  border-top: 1px solid #d7e0ea;
 }
 
 .uid {
   margin-right: auto;
 }
 .open-subtree {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -150,11 +150,16 @@ button {
   min-height: 36px;
   padding: 2px 6px;
   border: 1px solid #94a3b8;
-  border-radius: 3px;
+  border-radius: 6px;
   background: #f8fafc;
   color: inherit;
   font: inherit;
   cursor: pointer;
+}
+
+button:hover {
+  background: #eaf1ff;
+  border-color: #245dcc;
 }
 
 .behavior-tree-node:hover {

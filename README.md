@@ -7,6 +7,15 @@ Back, or Return to RobotTree to move through the navigation history.
 The playback timeline loads the exported recording and shows each node's recorded
 execution status at the selected time.
 
+The engineering workspace uses the full window: tree navigation at the top,
+recorded playback immediately above the graph, and graph filters and view controls
+in a single toolbar. Click a node to open the inspector on the right (below the
+graph on smaller screens). The legend remains below the visualization, definitions
+start collapsed, and **How to explore** opens the detailed interaction help.
+**Fit tree** is the initial view; **Readable view** brings the root to a legible scale.
+Presentation tokens live in `src/assets/workspace.css`; shared category and status
+colors remain in `src/assets/behaviorTreeAppearance.css`.
+
 The Vue-independent `parseBehaviorTree(xml)` utility uses the browser's `DOMParser`
 and expects `<root BTCPP_format="4">`. Definitions remain in document order in an
 array because IDs can repeat. Each definition retains its `ID`, `_fullpath`,
@@ -355,17 +364,16 @@ typed events, and UID status map are ready for WP-07; no WP-07 features are incl
 
 ### Graph visibility controls
 
-The toolbar inside the graph contains three toggles:
+The toolbar above the canvas groups path filtering, subtree visibility, and view controls:
 
 - **Running path only** hides nodes outside the routes to currently RUNNING nodes.
   Ancestors remain visible for context, with their own recorded statuses.
-- **Show subtrees** expands all resolvable subtree contents inline. Toggle it off
-  to collapse them again. SubTree reference boxes remain visible and clickable.
-- **Running subtrees only** expands a subtree when its reference or any descendant
-  has a recorded RUNNING status. Other subtree contents remain collapsed. This
-  mode and Show subtrees are mutually exclusive.
+- **Subtrees → All expanded** expands all resolvable subtree contents inline.
+  Choose **Collapsed** to hide their contents again. SubTree references remain clickable.
+- **Subtrees → Running only** expands a subtree when its reference or any descendant
+  has a recorded RUNNING status. Other subtree contents remain collapsed.
 
-Contents are hidden by default. Combine Running path only with Running subtrees
+Contents are hidden by default. Combine Running path only with Subtrees → Running
 only for the complete active route through nested definitions. Both follow playback
 and backward seeks. If no node is RUNNING, the path filter shows an empty message;
 the toolbar stays available. Clicking SubTree references still opens their exact
@@ -385,8 +393,8 @@ and parsed definitions are never modified. `useBehaviorTreeView` filters this gr
 and reuses the existing layout when its visible structure is unchanged.
 
 For the supplied recording at 23.5 seconds, RobotTree has 28 nodes with contents
-hidden, 765 with all contents expanded, and 24 with Running path only plus Running
-subtrees only. The last view includes UID 212 inside ExecDriveToPose. Seeking to
+hidden, 765 with all contents expanded, and 24 with Running path only plus Subtrees →
+Running only. The last view includes UID 212 inside ExecDriveToPose. Seeking to
 18 or 25 seconds removes UID 212 from the running path. `npm test` covers expansion,
 duplicate tree IDs, fallback IDs, invalid references, filtering, seeks, and layout
 caching; all six visibility combinations were checked against the real XML without

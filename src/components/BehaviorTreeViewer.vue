@@ -9,6 +9,7 @@ import type {
 import BehaviorTreeNodeView from '@/components/BehaviorTreeNode.vue'
 import BehaviorTreeLegend from '@/components/BehaviorTreeLegend.vue'
 import NodeInspector from '@/components/NodeInspector.vue'
+import AppIcon from '@/components/AppIcon.vue'
 import { NODE_WIDTH } from '@/utils/layoutTree'
 import { getNodeStatus } from '@/utils/playbackState'
 import { useBehaviorTreeView } from '@/composables/useBehaviorTreeView'
@@ -69,9 +70,10 @@ async function changeView(change: () => void) {
   await applyPendingView()
 }
 
-function toggleSubtrees(mode: SubtreeVisibility) {
+function setSubtrees(mode: SubtreeVisibility) {
+  if (subtrees.value === mode) return
   return changeView(() => {
-    subtrees.value = subtrees.value === mode ? 'hidden' : mode
+    subtrees.value = mode
   })
 }
 
@@ -178,220 +180,376 @@ watch(
 </script>
 
 <template>
-  <p v-if="graph.error" role="alert">{{ graph.error }}</p>
+  <p v-if="graph.error" class="notice notice-error" role="alert">{{ graph.error }}</p>
   <template v-else>
-    <ul v-if="graph.warnings.length" role="status">
+    <ul v-if="graph.warnings.length" class="notice" role="status">
       <li v-for="warning in graph.warnings" :key="warning">{{ warning }}</li>
     </ul>
-    <p>
-      Click a node to inspect it. SubTree nodes with a folder icon open a tree; their Inspect button
-      shows the reference details. Focus a node and press Enter for the same action. Trees open in
-      Fit tree view; Readable view zooms in at the root. Drag the background to pan; scroll or pinch
-      to zoom. Subtree contents start hidden.
-    </p>
-    <div class="viewer-workspace">
-      <div class="graph-container" role="region" :aria-label="`${tree.ID} behavior tree diagram`">
-        <div class="graph-toolbar">
-          <div class="graph-controls" role="group" aria-label="Tree visibility">
-            <button
-              type="button"
-              :aria-pressed="runningPathOnly"
-              @click="
-                changeView(() => {
-                  runningPathOnly = !runningPathOnly
-                })
-              "
-            >
-              Running path only
-            </button>
-            <button type="button" :aria-pressed="subtrees === 'all'" @click="toggleSubtrees('all')">
-              Show subtrees
-            </button>
-            <button
-              type="button"
-              :aria-pressed="subtrees === 'running'"
-              @click="toggleSubtrees('running')"
-            >
-              Running subtrees only
-            </button>
-          </div>
-          <div class="graph-controls" role="group" aria-label="Diagram controls">
-            <button type="button" @click="zoomIn()">Zoom in</button>
-            <button type="button" @click="zoomOut()">Zoom out</button>
-            <button type="button" @click="readableView()">Readable view</button>
-            <button type="button" @click="fitTree()">Fit tree</button>
-          </div>
-          <p class="view-summary">
-            Subtree contents:
-            {{
-              subtrees === 'hidden'
-                ? 'hidden'
-                : subtrees === 'all'
-                  ? 'all'
-                  : 'running branches only'
-            }}.
-          </p>
-        </div>
-        <div class="graph-canvas" @keydown="onGraphKeydown" @focusin="onGraphFocus">
-          <p v-if="!graph.nodes.length" class="empty-view" role="status">
-            {{
-              runningPathOnly
-                ? 'No RUNNING nodes at this time. Play, seek, or turn off Running path only.'
-                : 'This tree has no execution nodes.'
-            }}
-          </p>
-          <VueFlow
-            :nodes="graph.nodes"
-            :edges="displayEdges"
-            :nodes-draggable="false"
-            :nodes-connectable="false"
-            :edges-updatable="false"
-            :connect-on-click="false"
-            :delete-key-code="null"
-            :elements-selectable="true"
-            :min-zoom="0.05"
-            :max-zoom="2"
-            @node-click="onNodeClick"
-            @pane-click="closeInspector"
+    <section class="graph-panel" :aria-label="`${tree.ID} behavior tree diagram`">
+      <div class="graph-toolbar">
+        <div class="visibility-controls" role="group" aria-label="Tree visibility">
+          <button
+            class="ui-button path-filter"
+            type="button"
+            :aria-pressed="runningPathOnly"
+            @click="
+              changeView(() => {
+                runningPathOnly = !runningPathOnly
+              })
+            "
           >
-            <template #node-behavior-tree="nodeProps">
-              <BehaviorTreeNodeView
-                :data="nodeProps.data"
-                :selected="nodeProps.selected"
-                :status="getNodeStatus(props.statuses, nodeProps.data._uid)"
-                @inspect="inspectNode(nodeProps.id)"
-              />
-            </template>
-          </VueFlow>
+            <AppIcon name="route" /> Running path only
+          </button>
+          <label class="subtree-control">
+            Subtrees
+            <select
+              class="ui-select"
+              :value="subtrees"
+              @change="setSubtrees(($event.target as HTMLSelectElement).value as SubtreeVisibility)"
+            >
+              <option value="hidden">Collapsed</option>
+              <option value="running">Running only</option>
+              <option value="all">All expanded</option>
+            </select>
+          </label>
+        </div>
+        <div class="view-controls" role="group" aria-label="Diagram controls">
+          <div class="zoom-controls">
+            <button
+              class="ui-button button-quiet icon-button"
+              type="button"
+              aria-label="Zoom out"
+              title="Zoom out"
+              @click="zoomOut()"
+            >
+              <AppIcon name="minus" />
+            </button>
+            <span class="zoom-value" aria-label="Zoom level"
+              >{{ Math.round(viewport.zoom * 100) }}%</span
+            >
+            <button
+              class="ui-button button-quiet icon-button"
+              type="button"
+              aria-label="Zoom in"
+              title="Zoom in"
+              @click="zoomIn()"
+            >
+              <AppIcon name="plus" />
+            </button>
+          </div>
+          <button class="ui-button button-quiet" type="button" @click="readableView()">
+            <AppIcon name="readable" /> Readable view
+          </button>
+          <button class="ui-button" type="button" @click="fitTree()">
+            <AppIcon name="fit" /> Fit tree
+          </button>
         </div>
       </div>
-      <NodeInspector
-        v-if="selectedNode"
-        class="inspector-panel"
-        :node="selectedNode"
-        :status="getNodeStatus(props.statuses, selectedNode._uid)"
-        @close="closeInspector"
-      />
-    </div>
+      <div class="viewer-workspace">
+        <div class="graph-container">
+          <div class="graph-canvas" @keydown="onGraphKeydown" @focusin="onGraphFocus">
+            <div v-if="!graph.nodes.length" class="empty-view" role="status">
+              <AppIcon name="route" />
+              <strong>{{
+                runningPathOnly ? 'No running path at this moment' : 'No execution nodes'
+              }}</strong>
+              <p>
+                {{
+                  runningPathOnly
+                    ? 'Play or seek to another time, or turn off Running path only to explore the whole tree.'
+                    : 'This definition does not contain executable nodes.'
+                }}
+              </p>
+            </div>
+            <VueFlow
+              :nodes="graph.nodes"
+              :edges="displayEdges"
+              :nodes-draggable="false"
+              :nodes-connectable="false"
+              :edges-updatable="false"
+              :connect-on-click="false"
+              :delete-key-code="null"
+              :elements-selectable="true"
+              :min-zoom="0.05"
+              :max-zoom="2"
+              @node-click="onNodeClick"
+              @pane-click="closeInspector"
+            >
+              <template #node-behavior-tree="nodeProps">
+                <BehaviorTreeNodeView
+                  :data="nodeProps.data"
+                  :selected="nodeProps.selected"
+                  :status="getNodeStatus(props.statuses, nodeProps.data._uid)"
+                  @inspect="inspectNode(nodeProps.id)"
+                />
+              </template>
+            </VueFlow>
+          </div>
+          <div class="graph-footer">
+            <span class="graph-counts"
+              >{{ graph.nodes.length }} nodes <span aria-hidden="true">·</span>
+              {{ graph.edges.length }} connections</span
+            >
+            <span class="canvas-hint"
+              >Drag to pan <span aria-hidden="true">·</span> Scroll to zoom</span
+            >
+            <details class="graph-help">
+              <summary><AppIcon name="info" /> How to explore</summary>
+              <p>
+                Click a node to inspect its attributes and recorded status. Click a folder node to
+                open its subtree; use its Inspect button to inspect the reference instead. Keyboard:
+                focus a node and press Enter. Fit tree shows the overview; Readable view zooms in at
+                the root. Subtree contents start collapsed.
+              </p>
+            </details>
+          </div>
+        </div>
+        <NodeInspector
+          v-if="selectedNode"
+          class="inspector-panel"
+          :node="selectedNode"
+          :status="getNodeStatus(props.statuses, selectedNode._uid)"
+          @close="closeInspector"
+        />
+      </div>
+    </section>
     <BehaviorTreeLegend />
   </template>
 </template>
 
 <style scoped>
+.graph-panel {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.graph-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--line);
+  border-radius: 12px 12px 0 0;
+  background: var(--surface);
+}
+.visibility-controls,
+.view-controls,
+.subtree-control,
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.visibility-controls {
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+}
+.subtree-control {
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.subtree-control select {
+  min-width: 9rem;
+}
+.path-filter[aria-pressed='true'] {
+  color: #704508;
+  background: #fff3ca;
+  border-color: #b98224;
+}
+.path-filter[aria-pressed='true']:hover {
+  background: #ffe9a3;
+}
+.view-controls {
+  flex-wrap: wrap;
+}
+.zoom-controls {
+  gap: 0;
+  padding-right: 0.5rem;
+  border-right: 1px solid var(--line);
+}
+.zoom-value {
+  min-width: 3.25rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
 .viewer-workspace {
   display: flex;
-  gap: 1rem;
-  height: 70vh;
-  min-height: 32rem;
+  height: clamp(26rem, calc(100dvh - 350px), 64rem);
+  min-width: 0;
 }
-
 .graph-container {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  border: 1px solid #767676;
 }
-
-.graph-toolbar {
-  padding: 0.75rem;
-  border-bottom: 1px solid #cbd5e1;
-  background: #f8fafc;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.view-summary {
-  width: 100%;
-  margin: 0;
-  font-size: 0.875rem;
-}
-
 .graph-canvas {
   position: relative;
   flex: 1;
-  min-height: 16rem;
+  min-height: 0;
+  background-color: #f5f8fc;
+  background-image: radial-gradient(#cbd6e5 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
 }
-
 .empty-view {
   position: absolute;
-  inset: 1rem 1rem auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   z-index: 5;
-  padding: 1rem;
-  background: #fff;
+  width: min(28rem, calc(100% - 2rem));
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  text-align: center;
   pointer-events: none;
 }
-
+.empty-view > .app-icon {
+  display: block;
+  margin: 0 auto 0.75rem;
+  width: 28px;
+  height: 28px;
+  color: var(--muted);
+}
+.empty-view strong {
+  font-size: 1rem;
+}
+.empty-view p {
+  color: var(--muted);
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0;
+}
 .inspector-panel {
-  flex: 0 0 21rem;
+  flex: 0 0 23rem;
+  border-left: 1px solid var(--line);
+  border-radius: 0 0 12px 0;
 }
-
-.graph-controls {
+.graph-footer {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.25rem 1rem;
+  min-height: 40px;
+  padding: 0.375rem 0.875rem;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 12px 12px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 0.75rem;
 }
-
-button {
-  padding: 0.5rem 0.75rem;
-  font: inherit;
-  border: 1px solid #94a3b8;
-  border-radius: 3px;
-  background: #fff;
-  color: #172033;
-  cursor: pointer;
+.graph-counts {
+  font-variant-numeric: tabular-nums;
 }
-
-button[aria-pressed='true'] {
-  color: #fff;
-  background: #334155;
-  border-color: #334155;
+.graph-counts > span,
+.canvas-hint > span {
+  padding-inline: 0.375rem;
 }
-
-button:hover {
-  border-color: #172033;
+.canvas-hint {
+  margin-left: auto;
 }
-
-button:focus-visible {
-  outline: 2px solid #172033;
-  outline-offset: 2px;
+.graph-help summary {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 32px;
+  list-style: none;
+  color: var(--accent);
+  border-radius: 4px;
 }
-
+.graph-help summary::-webkit-details-marker {
+  display: none;
+}
+.graph-help summary .app-icon {
+  width: 16px;
+  height: 16px;
+}
+.graph-help summary:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.graph-help[open] {
+  width: 100%;
+}
+.graph-help p {
+  max-width: 80ch;
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
 :deep(.vue-flow__node:focus-visible) {
-  outline: 2px solid #172033;
-  outline-offset: 3px;
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
 }
-
+:deep(.vue-flow__edge-path) {
+  stroke: #a4b2c5;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
 :deep(.vue-flow__edge.running-path .vue-flow__edge-path) {
   stroke: #a16207;
   stroke-width: 4;
   stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
 }
-
-:deep(.vue-flow__edge.running-path:focus-visible .vue-flow__edge-path),
-:deep(.vue-flow__edge.running-path.selected .vue-flow__edge-path) {
+:deep(.vue-flow__edge:focus-visible .vue-flow__edge-path),
+:deep(.vue-flow__edge.selected .vue-flow__edge-path) {
   stroke: #172033;
 }
-
-@media (max-width: 800px) {
+@media (max-width: 1000px) {
   .viewer-workspace {
     flex-direction: column;
     height: auto;
   }
-  .graph-container {
-    flex: auto;
-    height: auto;
-  }
   .graph-canvas {
     flex: none;
-    height: 65vh;
+    height: 60svh;
     min-height: 24rem;
   }
   .inspector-panel {
     flex: auto;
-    max-height: 28rem;
+    max-height: 30rem;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0 0 12px 12px;
+  }
+}
+@media (max-width: 600px) {
+  .graph-toolbar {
+    padding: 0.625rem;
+    gap: 0.5rem;
+  }
+  .visibility-controls,
+  .view-controls {
+    width: 100%;
+  }
+  .view-controls {
+    gap: 0.25rem;
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--line);
+  }
+  .view-controls .ui-button {
+    padding-inline: 0.5rem;
+  }
+  .view-controls > .ui-button .app-icon {
+    display: none;
+  }
+  .zoom-controls {
+    border: 0;
+    padding: 0;
+  }
+  .zoom-value {
+    min-width: 2.5rem;
+  }
+  .canvas-hint {
+    display: none;
+  }
+  .graph-help {
+    margin-left: auto;
   }
 }
 </style>
