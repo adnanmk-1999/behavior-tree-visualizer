@@ -1,0 +1,1910 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root BTCPP_format="4">
+    <BehaviorTree ID="RobotTree" _fullpath="">
+        <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="1">
+            <ReactiveSequence name="top_level" _uid="2">
+                <EmergencyRideServer name="EmergencyRideServer" _uid="3" body_done="{body_done}" feedback="{emergency_ride_feedback}" cancel_requested="{cancel_requested}" goal="{emergency_ride_goal}" />
+                <MissionServer name="MissionServer" _uid="4" body_done="{body_done}" mission_outcome="{mission_outcome}" feedback="{mission_feedback}" cancel_requested="{cancel_requested}" goal="{mission_goal}" />
+                <TeachServer name="TeachServer" _uid="5" body_done="{body_done}" zone_id="{zone_id}" teach_complete="{teach_complete}" action_id="{action_id}" road_path_id="{road_path_id}" teach_ok="{teach_ok}" feedback="{teach_feedback}" session_map_id="{session_map_id}" cancel_requested="{cancel_requested}" goal="{teach_goal}" goal_id="{teach_session_id}" />
+                <ManualServer name="ManualServer" _uid="6" body_done="{body_done}" manual_complete="{manual_complete}" feedback="{manual_feedback}" manual_cleaning_id="{manual_cleaning_id}" cancel_requested="{cancel_requested}" goal="{manual_goal}" />
+                <LifecycleService name="LifecycleService" _uid="7" />
+                <ModeArbiter name="ModeArbiter" _uid="8" body_done="{body_done}" mode="{mode}" submode="{submode}" />
+                <RobotModePublisher name="RobotModePublisher" _uid="9" mode="{mode}" submode="{submode}" />
+                <Switch5 name="Switch5" _uid="10" variable="{mode}" case_1="BOOTUP" case_2="AUTO" case_3="MANUAL" case_4="SLEEP" case_5="UPDATING">
+                    <SubTree ID="BootupBody" _fullpath="BootupBody::11" _uid="11" body_done="{body_done}" />
+                    <Switch3 name="Switch3" _uid="29" variable="{submode}" case_1="NONE" case_2="MISSION" case_3="EMERGENCY_RIDE">
+                        <SubTree ID="IdleBody" _fullpath="IdleBody::30" _uid="30" />
+                        <SubTree ID="MissionBody" _fullpath="MissionBody::34" _uid="34" mission_outcome="{mission_outcome}" mission_feedback="{mission_feedback}" mission_goal="{mission_goal}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <SubTree ID="EmergencyRideBody" _fullpath="EmergencyRideBody::227" _uid="227" emergency_ride_feedback="{emergency_ride_feedback}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <LogStatus name="LogStatus" _uid="286" message="ModeDispatcher: no AUTO body for the current submode" />
+                    </Switch3>
+                    <Switch7 name="Switch7" _uid="287" variable="{submode}" case_1="NONE" case_2="TEACH" case_3="MANUAL_CLEAN" case_6="MANUAL_MAP_LOAD" case_4="MANUAL_DOCK" case_7="MANUAL_CALIBRATION" case_5="MANUAL_UNDOCK">
+                        <SubTree ID="IdleBody" _fullpath="IdleBody::288" _uid="288" />
+                        <SubTree ID="TeachBody" _fullpath="TeachBody::292" _uid="292" road_path_id="{road_path_id}" session_map_id="{session_map_id}" teach_session_id="{teach_session_id}" action_id="{action_id}" teach_complete="{teach_complete}" teach_feedback="{teach_feedback}" teach_goal="{teach_goal}" zone_id="{zone_id}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <SubTree ID="ManualCleanBody" _fullpath="ManualCleanBody::460" _uid="460" manual_cleaning_id="{manual_cleaning_id}" manual_complete="{manual_complete}" session_map_id="{session_map_id}" manual_feedback="{manual_feedback}" manual_goal="{manual_goal}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <SubTree ID="ManualDockBody" _fullpath="ManualDockBody::527" _uid="527" manual_complete="{manual_complete}" manual_feedback="{manual_feedback}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <SubTree ID="ManualUndockBody" _fullpath="ManualUndockBody::604" _uid="604" manual_complete="{manual_complete}" manual_feedback="{manual_feedback}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <SubTree ID="ManualMapLoadBody" _fullpath="ManualMapLoadBody::669" _uid="669" manual_complete="{manual_complete}" manual_feedback="{manual_feedback}" manual_goal="{manual_goal}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <SubTree ID="ManualCalibrationBody" _fullpath="ManualCalibrationBody::692" _uid="692" manual_complete="{manual_complete}" manual_feedback="{manual_feedback}" body_done="{body_done}" cancel_requested="{cancel_requested}" />
+                        <LogStatus name="LogStatus" _uid="760" message="ModeDispatcher: no MANUAL body for the current submode" />
+                    </Switch7>
+                    <SubTree ID="SleepBody" _fullpath="SleepBody::761" _uid="761" />
+                    <SubTree ID="UpdatingBody" _fullpath="UpdatingBody::763" _uid="763" />
+                    <LogStatus name="LogStatus" _uid="765" message="ModeDispatcher: no body for the current mode" />
+                </Switch5>
+            </ReactiveSequence>
+        </KeepRunningUntilFailure>
+    </BehaviorTree>
+    <BehaviorTree ID="BootupBody" _fullpath="BootupBody::11">
+        <Sequence name="bootup_sequence" _uid="12">
+            <LogStatus name="LogStatus" _uid="13" message="Bootup: initializing…" />
+            <SubTree ID="RobotBootup" _fullpath="BootupBody::11/RobotBootup::14" _uid="14" />
+            <RetryUntilSuccessful name="RetryUntilSuccessful" _uid="22" num_attempts="-1">
+                <SubTree ID="IsRobotOperational" _fullpath="BootupBody::11/IsRobotOperational::23" _uid="23" />
+            </RetryUntilSuccessful>
+            <LogStatus name="LogStatus" _uid="27" message="Bootup: complete" />
+            <Script name="Script" _uid="28" code="body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RobotBootup" _fullpath="BootupBody::11/RobotBootup::14">
+        <Sequence name="Sequence" _uid="15">
+            <LogStatus name="LogStatus" _uid="16" message="RobotBootup [b50]: waiting for the system to come up" />
+            <ForceSuccess name="ForceSuccess" _uid="17">
+                <WaitForSystemTarget name="WaitForSystemTarget" _uid="18" accept_converged="true" target="FULL" timeout_s="180" no_state_grace_s="15" />
+            </ForceSuccess>
+            <ForceSuccess name="ForceSuccess" _uid="19">
+                <WaitForSlamLocalized name="WaitForSlamLocalized" _uid="20" timeout="15" />
+            </ForceSuccess>
+            <Script name="Script" _uid="21" code="@system_bootup_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="IsRobotOperational" _fullpath="BootupBody::11/IsRobotOperational::23">
+        <Fallback name="Fallback" _uid="24">
+            <IsStageActive name="IsStageActive" _uid="25" accept_degraded="true" pass_if_unavailable="true" stage="low_level" />
+            <ScriptCondition name="ScriptCondition" _uid="26" code="@system_bootup_done == true" />
+        </Fallback>
+    </BehaviorTree>
+    <BehaviorTree ID="IdleBody" _fullpath="IdleBody::30">
+        <Sequence name="Sequence" _uid="31">
+            <LogStatus name="LogStatus" _uid="32" message="Idle: no session running, waiting for a goal" />
+            <WaitForMode name="WaitForMode" _uid="33" message="Waiting for a mission to be queued…" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="MissionBody" _fullpath="MissionBody::34">
+        <Sequence name="mission_body" _uid="35">
+            <Script name="Script" _uid="36" code="mission_complete:=false; mission_paused:=false; mission_interrupted:=false; halt_action_execution:=false; hw_gate_armed:=false; safety_gate_armed:=false; user_pause_armed:=false; auto_mode:=true; current_action_type:=''; @manual_cleaning_finish:=false; @emergency_ride_finish:=false" />
+            <ForceSuccess name="ForceSuccess" _uid="37">
+                <RecordDuringExecution name="RecordDuringExecution" _uid="38" max_duration_s="0.000000" require_recording="false" split_bag="false" scenario="application" lease_timeout_s="30.0">
+                    <Sequence name="Sequence" _uid="39">
+                        <LoadMissionExecution name="LoadMissionExecution" _uid="40" mission_goal="{mission_goal}" mission="{mission}" />
+                        <PlanMissionExecution name="PlanMissionExecution" _uid="41" mission="{mission}" />
+                        <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="42">
+                            <ReactiveSequence name="mission_guard" _uid="43">
+                                <ScriptCondition name="ScriptCondition" _uid="44" code=" cancel_requested == false " />
+                                <MissionControlService name="MissionControlService" _uid="45" countdown_s="10.000000" mission_paused="{mission_paused}" mission_interrupted="{mission_interrupted}" current_action_type="{current_action_type}" feedback="{mission_feedback}" cancel_requested="{cancel_requested}" halt_action_execution="{halt_action_execution}" interrupt_request="{interrupt_request}" manual_cleaning_finish="{@manual_cleaning_finish}" emergency_ride_finish="{@emergency_ride_finish}" user_pause_armed="{user_pause_armed}" />
+                                <Script name="Script" _uid="46" code="auto_mode:=(current_action_type != 'MANUAL_CLEANING' &amp;&amp; current_action_type != 'EMERGENCY_RIDE')" />
+                                <SubTree ID="RefreshFaultRegistry" _fullpath="MissionBody::34/RefreshFaultRegistry::47" _uid="47" auto_mode="{auto_mode}" />
+                                <ReactiveFallback name="user_pause_guard" _uid="81">
+                                    <ReactiveSequence name="ReactiveSequence" _uid="82">
+                                        <ScriptCondition name="ScriptCondition" _uid="83" code="mission_paused == false" />
+                                        <GateCountdown name="GateCountdown" _uid="84" seconds="10" feedback="{mission_feedback}" armed="{user_pause_armed}" />
+                                    </ReactiveSequence>
+                                    <ReactiveSequence name="ReactiveSequence" _uid="85">
+                                        <SetFeedbackState name="SetFeedbackState" _uid="86" feedback="{mission_feedback}" value="2" />
+                                        <SetFeedbackFaults name="SetFeedbackFaults" _uid="87" feedback="{mission_feedback}" />
+                                        <Script name="Script" _uid="88" code="user_pause_armed := true" />
+                                        <WaitForCondition name="WaitForCondition" _uid="89" timeout="0.000000" message="Paused by user…" />
+                                    </ReactiveSequence>
+                                </ReactiveFallback>
+                                <ReactiveFallback name="safety_guard" _uid="90">
+                                    <ReactiveSequence name="ReactiveSequence" _uid="91">
+                                        <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="92" category="SAFETY" />
+                                        <GateCountdown name="GateCountdown" _uid="93" seconds="10" feedback="{mission_feedback}" armed="{safety_gate_armed}" />
+                                    </ReactiveSequence>
+                                    <ReactiveSequence name="ReactiveSequence" _uid="94">
+                                        <SetFeedbackState name="SetFeedbackState" _uid="95" feedback="{mission_feedback}" value="4" />
+                                        <SetFeedbackFaults name="SetFeedbackFaults" _uid="96" feedback="{mission_feedback}" />
+                                        <Script name="Script" _uid="97" code="safety_gate_armed := true" />
+                                        <WaitForCondition name="WaitForCondition" _uid="98" message="Waiting for safety to clear…" timeout="5400" />
+                                    </ReactiveSequence>
+                                </ReactiveFallback>
+                                <ReactiveFallback name="hardware_guard" _uid="99">
+                                    <ReactiveSequence name="ReactiveSequence" _uid="100">
+                                        <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="101" category="HARDWARE" />
+                                        <GateCountdown name="GateCountdown" _uid="102" seconds="10" feedback="{mission_feedback}" armed="{hw_gate_armed}" />
+                                    </ReactiveSequence>
+                                    <ReactiveSequence name="ReactiveSequence" _uid="103">
+                                        <SetFeedbackState name="SetFeedbackState" _uid="104" feedback="{mission_feedback}" value="3" />
+                                        <SetFeedbackFaults name="SetFeedbackFaults" _uid="105" feedback="{mission_feedback}" />
+                                        <Script name="Script" _uid="106" code="hw_gate_armed := true" />
+                                        <WaitForCondition name="WaitForCondition" _uid="107" message="Waiting for hardware to clear…" timeout="5400" />
+                                    </ReactiveSequence>
+                                </ReactiveFallback>
+                                <ReactiveFallback name="interrupt_guard" _uid="108">
+                                    <ScriptCondition name="ScriptCondition" _uid="109" code="mission_interrupted == false" />
+                                    <Sequence name="Sequence" _uid="110">
+                                        <SetFeedbackState name="SetFeedbackState" _uid="111" feedback="{mission_feedback}" value="5" />
+                                        <WaitForCondition name="WaitForCondition" _uid="112" timeout="0.000000" message="Interrupted — waiting for the user…" />
+                                    </Sequence>
+                                </ReactiveFallback>
+                                <SuperviseResources name="SuperviseResources" _uid="113" action_syncer="{action_syncer}" halt_pending="{halt_action_execution}" halt_action_execution="{halt_action_execution}" instinctive_docking_request="{instinctive_docking_request}" />
+                                <Sequence name="Sequence" _uid="114">
+                                    <PlanNextAction name="PlanNextAction" _uid="115" mission="{mission}" interrupt_request="{interrupt_request}" instinctive_docking_request="{instinctive_docking_request}" feedback="{mission_feedback}" action_syncer="{action_syncer}" current_action_type="{current_action_type}" mission_complete="{mission_complete}" _skipIf="halt_action_execution == true" />
+                                    <ForceSuccess name="ForceSuccess" _uid="116">
+                                        <ReactiveSequence name="action_interrupt_guard" _uid="117">
+                                            <ScriptCondition name="ScriptCondition" _uid="118" code="halt_action_execution == false" />
+                                            <FinalizeActionExecution name="FinalizeActionExecution" _uid="119" action_syncer="{action_syncer}" interrupt_request="{interrupt_request}" instinctive_docking_request="{instinctive_docking_request}" action_result_details="{action_result_details}" action_error="{action_error}" cancel_requested="{cancel_requested}">
+                                                <SubTree ID="ActionDispatchSwitch" _fullpath="MissionBody::34/ActionDispatchSwitch::120" _uid="120" action_result_details="{action_result_details}" action_error="{action_error}" action_syncer="{action_syncer}" current_action_type="{current_action_type}" />
+                                            </FinalizeActionExecution>
+                                        </ReactiveSequence>
+                                    </ForceSuccess>
+                                    <Script name="Script" _uid="224" code="halt_action_execution:=false" />
+                                </Sequence>
+                            </ReactiveSequence>
+                        </KeepRunningUntilFailure>
+                    </Sequence>
+                </RecordDuringExecution>
+            </ForceSuccess>
+            <FinalizeMissionExecution name="FinalizeMissionExecution" _uid="225" mission="{mission}" action_syncer="{action_syncer}" mission_complete="{mission_complete}" cancel_requested="{cancel_requested}" mission_outcome="{mission_outcome}" />
+            <Script name="Script" _uid="226" code="body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="MissionBody::34/RefreshFaultRegistry::47">
+        <ForceSuccess name="ForceSuccess" _uid="48">
+            <Sequence name="Sequence" _uid="49">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="50" />
+                <ParallelAll name="ParallelAll" _uid="51" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="MissionBody::34/RefreshFaultRegistry::47/IsHardwareOperatable::52" _uid="52" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="MissionBody::34/RefreshFaultRegistry::47/IsSafetyOperatable::71" _uid="71" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="MissionBody::34/RefreshFaultRegistry::47/IsHardwareOperatable::52">
+        <ParallelAll name="ParallelAll" _uid="53" max_failures="1">
+            <RecordFault name="RecordFault" _uid="54" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="55" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="56" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="57" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="58" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="59" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="60" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="61" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="62" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="63" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="64" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="65" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="66" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="67" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="68" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="69" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="70" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="MissionBody::34/RefreshFaultRegistry::47/IsSafetyOperatable::71">
+        <ParallelAll name="ParallelAll" _uid="72" max_failures="1">
+            <RecordFault name="RecordFault" _uid="73" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="74" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="75" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="76" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="77" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="78" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="79" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="80" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="ActionDispatchSwitch" _fullpath="MissionBody::34/ActionDispatchSwitch::120">
+        <Switch10 name="Switch10" _uid="121" variable="{current_action_type}" case_1="FILLIN" case_9="MANUAL_CLEANING" case_2="TEACH_PATH" case_3="ZONE_CLEANING" case_6="MAP_LOAD" case_4="DOCKING" case_7="DRIVE_TO_POSE" case_5="UNDOCKING" case_8="ELEVATOR" case_10="EMERGENCY_RIDE">
+            <SubTree ID="ExecFillin" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecFillin::122" _uid="122" action_result_details="{action_result_details}" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecTeachPath" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecTeachPath::150" _uid="150" action_result_details="{action_result_details}" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecZoneCleaning" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecZoneCleaning::158" _uid="158" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecDocking" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecDocking::162" _uid="162" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecUndocking" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecUndocking::175" _uid="175" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecMapLoad" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecMapLoad::184" _uid="184" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecDriveToPose" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecDriveToPose::201" _uid="201" action_result_details="{action_result_details}" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecElevator" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecElevator::215" _uid="215" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecManualCleaning" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecManualCleaning::219" _uid="219" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <SubTree ID="ExecEmergencyRide" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecEmergencyRide::221" _uid="221" action_error="{action_error}" action_syncer="{action_syncer}" />
+            <AlwaysFailure name="AlwaysFailure" _uid="223" />
+        </Switch10>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecFillin" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecFillin::122">
+        <Sequence name="Sequence" _uid="123">
+            <PrepareFillinExecution name="PrepareFillinExecution" _uid="124" action_syncer="{action_syncer}" boundary_polygon="{boundary_polygon}" dynamic="{dynamic_fillin}" map_id="{map_id}" events="{fillin_events}" path="{fillin_path}" stored_coverage_path="{stored_coverage_path}" start_progress="{start_progress}" boundary_transport_paths="{boundary_transport_paths}" resume_mapping="{resume_mapping}" transport_paths="{transport_paths}" action_error="{action_error}" boundary_path="{boundary_path}" />
+            <Sequence name="plan_dynamic_fillin" _uid="125" _skipIf="dynamic_fillin == false || stored_coverage_path">
+                <ForceSuccess name="ForceSuccess" _uid="126">
+                    <CaptureMap name="CaptureMap" _uid="127" timeout="15.0" resume="{resume_mapping}" map="{captured_map}">
+                        <Parallel name="Parallel" _uid="128" success_count="1" failure_count="1">
+                            <FollowPath name="FollowPath" _uid="129" server_wait_timeout_s="5.000000" max_server_restart_retries="3" feedback_timeout_s="15.000000" path="{boundary_path}" progress="{start_progress}" transport_paths="{boundary_transport_paths}" />
+                            <TrackPathExecution name="TrackPathExecution" _uid="130" action_syncer="{action_syncer}" report_progress="false" progress="{boundary_progress}" />
+                            <StoreBoundaryProgress name="StoreBoundaryProgress" _uid="131" action_syncer="{action_syncer}" progress="{boundary_progress}" />
+                        </Parallel>
+                    </CaptureMap>
+                </ForceSuccess>
+                <Fallback name="Fallback" _uid="132">
+                    <DetectObstaclesInOccupancyGrid name="DetectObstaclesInOccupancyGrid" _uid="133" map="{captured_map}" boundary="{boundary_path}" map_id="{map_id}" timeout="60.0" obstacles="{obstacles}" />
+                    <PublishDiagnostic name="PublishDiagnostic" _uid="134" diagnostic_id="PRE_PROCESS/SMARTFILL_OBSTACLE_CONSIDERATION_FAILED" level="WARN" message="Dynamic fillin: obstacle detection failed, planning without obstacles" />
+                </Fallback>
+                <Fallback name="Fallback" _uid="135">
+                    <SmartFill name="SmartFill" _uid="136" max_attempts="0" boundary="{boundary_polygon}" obstacles="{obstacles}" timeout="120.0" coverage_path="{fillin_path}" used_planner_name="{fillin_planner}" requested_planner_name="{requested_planner}" obstacles_considered="{obstacles_considered}" action_error="{action_error}" />
+                    <ForceFailure name="ForceFailure" _uid="137">
+                        <PublishDiagnostic name="PublishDiagnostic" _uid="138" diagnostic_id="PRE_PROCESS/SMARTFILL_PLANNING_FAILED" level="ERROR" message="Dynamic fillin: coverage planning failed, the area was not cleaned" />
+                    </ForceFailure>
+                </Fallback>
+                <Sequence name="Sequence" _uid="139" _skipIf="obstacles_considered">
+                    <PublishDiagnostic name="PublishDiagnostic" _uid="140" diagnostic_id="PRE_PROCESS/SMARTFILL_OBSTACLE_CONSIDERATION_FAILED" level="WARN" message="Dynamic fillin: the planned path does not account for detected obstacles" />
+                </Sequence>
+                <Sequence name="Sequence" _uid="141" _skipIf="fillin_planner == requested_planner">
+                    <PublishDiagnostic name="PublishDiagnostic" _uid="142" diagnostic_id="PRE_PROCESS/SMARTFILL_PATTERN_SWITCH_REQUIRED" level="WARN" message="Dynamic fillin: the requested cleaning pattern did not fit, a different one was used" />
+                </Sequence>
+                <ForceSuccess name="ForceSuccess" _uid="143">
+                    <StoreCoveragePath name="StoreCoveragePath" _uid="144" action_syncer="{action_syncer}" coverage_path="{fillin_path}" planner="{fillin_planner}" _post="start_progress = 0.0" />
+                </ForceSuccess>
+            </Sequence>
+            <Parallel name="Parallel" _uid="145" success_count="1" failure_count="1">
+                <FollowPath name="FollowPath" _uid="146" server_wait_timeout_s="5.000000" max_server_restart_retries="3" feedback_timeout_s="15.000000" path="{fillin_path}" progress="{start_progress}" transport_paths="{transport_paths}" action_error="{action_error}" success="{follow_path_success}" final_state="{follow_path_final_state}" traveled_distance="{traveled_distance}" />
+                <SupervisePathExecution name="SupervisePathExecution" _uid="147" min_execution_time_s="0.000000" escalation_threshold="0.000000" escalated_stuck_time_s="0.000000" near_goal_stuck_time_s="5.000000" blocked_time_s="120.000000" stuck_time_s="10.000000" near_goal_remaining_length_m="0.000000" action_syncer="{action_syncer}" feedback_stale_time_s="2.000000" escalated_blocked_time_s="30.000000" stuck_radius_m="1.500000" blocked_trigger_service="/test/fillin/force_blocked" near_goal_trigger_service="/test/fillin/force_near_goal" action_error="{action_error}" />
+                <MonitorPathEvents name="MonitorPathEvents" _uid="148" action_syncer="{action_syncer}" events="{fillin_events}" action_error="{action_error}" />
+                <TrackPathExecution name="TrackPathExecution" _uid="149" report_progress="true" action_syncer="{action_syncer}" />
+            </Parallel>
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecTeachPath" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecTeachPath::150">
+        <Sequence name="Sequence" _uid="151">
+            <PreparePathExecution name="PreparePathExecution" _uid="152" action_syncer="{action_syncer}" path="{teach_path}" events="{teach_events}" start_progress="{start_progress}" transport_paths="{transport_paths}" />
+            <Parallel name="Parallel" _uid="153" success_count="1" failure_count="1">
+                <FollowPath name="FollowPath" _uid="154" server_wait_timeout_s="5.000000" max_server_restart_retries="3" feedback_timeout_s="15.000000" path="{teach_path}" progress="{start_progress}" transport_paths="{transport_paths}" action_error="{action_error}" success="{follow_path_success}" final_state="{follow_path_final_state}" traveled_distance="{traveled_distance}" />
+                <SupervisePathExecution name="SupervisePathExecution" _uid="155" min_execution_time_s="0.000000" escalation_threshold="0.000000" escalated_stuck_time_s="0.000000" near_goal_stuck_time_s="5.000000" blocked_time_s="120.000000" stuck_time_s="10.000000" near_goal_remaining_length_m="0.000000" action_syncer="{action_syncer}" feedback_stale_time_s="2.000000" escalated_blocked_time_s="30.000000" stuck_radius_m="1.500000" blocked_trigger_service="/test/teach_path/force_blocked" near_goal_trigger_service="/test/teach_path/force_near_goal" action_error="{action_error}" />
+                <MonitorPathEvents name="MonitorPathEvents" _uid="156" action_syncer="{action_syncer}" events="{teach_events}" />
+                <TrackPathExecution name="TrackPathExecution" _uid="157" report_progress="true" action_syncer="{action_syncer}" />
+            </Parallel>
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecZoneCleaning" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecZoneCleaning::158">
+        <Sequence name="Sequence" _uid="159">
+            <LogStatus name="LogStatus" _uid="160" message="ExecZoneCleaning: not implemented yet — returning SUCCESS" />
+            <AlwaysSuccess name="AlwaysSuccess" _uid="161" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecDocking" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecDocking::162">
+        <Sequence name="Sequence" _uid="163">
+            <GetDockingGoal name="GetDockingGoal" _uid="164" action_syncer="{action_syncer}" landmark="{docking_landmark}" wait_for_resources="{docking_wait_for_resources}" refill_requested="{docking_refill_requested}" tank_cleaning="{docking_tank_cleaning}" stop_when_power_goal_reached="{docking_stop_when_power_goal_reached}" flush="{docking_flush}" power="{docking_power}" fresh_water="{docking_fresh_water}" />
+            <RecordDuringExecution name="RecordDuringExecution" _uid="165" max_duration_s="0.000000" lease_timeout_s="30.000000" require_recording="false" split_bag="false" scenario="docking">
+                <Fallback name="Fallback" _uid="166">
+                    <Sequence name="Sequence" _uid="167">
+                        <Docking name="Docking" _uid="168" max_retries="10" landmark="{docking_landmark}" number_of_tries="{docking_tries}" success="{docking_success}" resolved_landmark="{docking_resolved_landmark}" />
+                        <PublishLastLandmark name="PublishLastLandmark" _uid="169" landmark="{docking_resolved_landmark}" />
+                        <CleaningDocking name="CleaningDocking" _uid="170" timeout="2.000000" command="start" tank_cleaning="{docking_tank_cleaning}" stop_when_power_goal_reached="{docking_stop_when_power_goal_reached}" flush="{docking_flush}" power="{docking_power}" fresh_water="{docking_fresh_water}" />
+                        <PublishDockingStatus name="PublishDockingStatus" _uid="171" dock="true" state="success" />
+                    </Sequence>
+                    <ForceFailure name="ForceFailure" _uid="172">
+                        <PublishDockingStatus name="PublishDockingStatus" _uid="173" dock="true" state="failed" />
+                    </ForceFailure>
+                </Fallback>
+            </RecordDuringExecution>
+            <WaitForResources name="WaitForResources" _uid="174" timeout_s="0.000000" wait_for_resources="{docking_wait_for_resources}" power="{docking_power}" fresh_water="{docking_fresh_water}" tank_cleaning="{docking_tank_cleaning}" flush="{docking_flush}" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecUndocking" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecUndocking::175">
+        <RecordDuringExecution name="RecordDuringExecution" _uid="176" max_duration_s="0.000000" lease_timeout_s="30.000000" require_recording="false" split_bag="false" scenario="docking">
+            <Fallback name="Fallback" _uid="177">
+                <Sequence name="Sequence" _uid="178">
+                    <CleaningDocking name="CleaningDocking" _uid="179" tank_cleaning="false" stop_when_power_goal_reached="false" flush="false" power="0.000000" fresh_water="0.000000" timeout="2.000000" command="stop" />
+                    <Undocking name="Undocking" _uid="180" max_retries="10" landmark="closest" number_of_tries="{undocking_tries}" success="{undocking_success}" />
+                    <PublishDockingStatus name="PublishDockingStatus" _uid="181" dock="false" state="success" />
+                </Sequence>
+                <ForceFailure name="ForceFailure" _uid="182">
+                    <PublishDockingStatus name="PublishDockingStatus" _uid="183" dock="false" state="failed" />
+                </ForceFailure>
+            </Fallback>
+        </RecordDuringExecution>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecMapLoad" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecMapLoad::184">
+        <Sequence name="Sequence" _uid="185">
+            <GetMapIdFromSyncer name="GetMapIdFromSyncer" _uid="186" action_syncer="{action_syncer}" map_id="{map_id}" />
+            <LoadMapSyncer name="LoadMapSyncer" _uid="187" map_id="{map_id}" lazy_load="false" map_syncer="{map_syncer}" />
+            <Fallback name="Fallback" _uid="188">
+                <IsLocalizedOnMap name="IsLocalizedOnMap" _uid="189" map_id="{map_id}" />
+                <Sequence name="Sequence" _uid="190">
+                    <Fallback name="Fallback" _uid="191">
+                        <Sequence name="Sequence" _uid="192">
+                            <EstimatePoseFromSharedLandmark name="EstimatePoseFromSharedLandmark" _uid="193" map_syncer="{map_syncer}" pose="{estimated_pose}" />
+                            <SlamStartLocalization name="SlamStartLocalization" _uid="194" map_id="{map_id}" timeout="30" />
+                            <SlamInitPose name="SlamInitPose" _uid="195" pose="{estimated_pose}" timeout="20" />
+                        </Sequence>
+                        <Sequence name="Sequence" _uid="196">
+                            <SlamStartLocalization name="SlamStartLocalization" _uid="197" map_id="{map_id}" timeout="30" />
+                            <EstimatePoseFromLandmark name="EstimatePoseFromLandmark" _uid="198" map_syncer="{map_syncer}" timeout="10" pose="{estimated_pose}" />
+                            <SlamInitPose name="SlamInitPose" _uid="199" pose="{estimated_pose}" timeout="20" />
+                        </Sequence>
+                    </Fallback>
+                    <WaitForSlamLocalized name="WaitForSlamLocalized" _uid="200" timeout="30" />
+                </Sequence>
+            </Fallback>
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecDriveToPose" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecDriveToPose::201">
+        <Sequence name="Sequence" _uid="202">
+            <Timeout name="Timeout" _uid="203" msec="5000">
+                <GetInformedA2BGoalInMission name="GetInformedA2BGoalInMission" _uid="204" action_syncer="{action_syncer}" goal_pose="{goal_pose}" map_id="{map_id}" path_segments="{path_segments}" />
+            </Timeout>
+            <Timeout name="Timeout" _uid="205" msec="5000">
+                <PrepareProvidedCostmap name="PrepareProvidedCostmap" _uid="206" timeout="30.000000" map_id="{map_id}" clearing_radius="0.15" />
+            </Timeout>
+            <Timeout name="Timeout" _uid="207" msec="5000">
+                <PlanInformedA2B name="PlanInformedA2B" _uid="208" goal_pose="{goal_pose}" path_segments="{path_segments}" map_id="{map_id}" live_costmap="true" transport_paths="{transport_paths}" action_error="{action_error}" path="{planned_a2b_path}" />
+            </Timeout>
+            <Parallel name="Parallel" _uid="209" success_count="1" failure_count="1">
+                <ReactiveSequence name="ReactiveSequence" _uid="210">
+                    <CleaningOff name="CleaningOff" _uid="211" force="false" />
+                    <FollowPath name="FollowPath" _uid="212" server_wait_timeout_s="5.000000" max_server_restart_retries="3" feedback_timeout_s="15.000000" path="{planned_a2b_path}" progress="0.0" transport_paths="{transport_paths}" action_error="{action_error}" success="{follow_path_success}" final_state="{follow_path_final_state}" traveled_distance="{traveled_distance}" />
+                </ReactiveSequence>
+                <SupervisePathExecution name="SupervisePathExecution" _uid="213" min_execution_time_s="0.000000" escalation_threshold="0.000000" escalated_stuck_time_s="0.000000" near_goal_stuck_time_s="5.000000" blocked_time_s="120.000000" stuck_time_s="10.000000" near_goal_remaining_length_m="0.000000" action_syncer="{action_syncer}" feedback_stale_time_s="2.000000" escalated_blocked_time_s="30.000000" stuck_radius_m="1.500000" blocked_trigger_service="/test/drive_to_pose/force_blocked" near_goal_trigger_service="/test/drive_to_pose/force_near_goal" action_error="{action_error}" />
+                <TrackPathExecution name="TrackPathExecution" _uid="214" report_progress="true" action_syncer="{action_syncer}" />
+            </Parallel>
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecElevator" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecElevator::215">
+        <Sequence name="Sequence" _uid="216">
+            <LogStatus name="LogStatus" _uid="217" message="ExecElevator: not implemented yet — returning SUCCESS" />
+            <AlwaysSuccess name="AlwaysSuccess" _uid="218" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExecManualCleaning" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecManualCleaning::219">
+        <ManualCleaningExecution name="ManualCleaningExecution" _uid="220" action_syncer="{action_syncer}" manual_cleaning_finish="{@manual_cleaning_finish}" />
+    </BehaviorTree>
+    <BehaviorTree ID="ExecEmergencyRide" _fullpath="MissionBody::34/ActionDispatchSwitch::120/ExecEmergencyRide::221">
+        <EmergencyRideExecution name="EmergencyRideExecution" _uid="222" action_syncer="{action_syncer}" emergency_ride_finish="{@emergency_ride_finish}" />
+    </BehaviorTree>
+    <BehaviorTree ID="EmergencyRideBody" _fullpath="EmergencyRideBody::227">
+        <Sequence name="emergency_ride_body" _uid="228">
+            <Script name="Script" _uid="229" code="body_done:=false; auto_mode:=false" />
+            <LogStatus name="LogStatus" _uid="230" message="Emergency ride: operator driving under the capped filter" />
+            <ForceSuccess name="ForceSuccess" _uid="231">
+                <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="232">
+                    <ReactiveSequence name="emergency_ride_guard" _uid="233">
+                        <ScriptCondition name="ScriptCondition" _uid="234" code="cancel_requested == false" />
+                        <SetEmergencyRideFilterFeedback name="SetEmergencyRideFilterFeedback" _uid="235" feedback="{emergency_ride_feedback}" />
+                        <SubTree ID="RefreshFaultRegistry" _fullpath="EmergencyRideBody::227/RefreshFaultRegistry::236" _uid="236" auto_mode="{auto_mode}" />
+                        <ReactiveFallback name="safety_guard" _uid="270">
+                            <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="271" category="SAFETY" />
+                            <ReactiveSequence name="ReactiveSequence" _uid="272">
+                                <SetEmergencyRideFeedbackState name="SetEmergencyRideFeedbackState" _uid="273" feedback="{emergency_ride_feedback}" value="3" />
+                                <SetEmergencyRideFeedbackFaults name="SetEmergencyRideFeedbackFaults" _uid="274" feedback="{emergency_ride_feedback}" />
+                                <WaitForCondition name="WaitForCondition" _uid="275" timeout="0.000000" message="Emergency ride: waiting for safety to clear…" />
+                            </ReactiveSequence>
+                        </ReactiveFallback>
+                        <ReactiveFallback name="hw_guard" _uid="276">
+                            <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="277" category="HARDWARE" />
+                            <ReactiveSequence name="ReactiveSequence" _uid="278">
+                                <SetEmergencyRideFeedbackState name="SetEmergencyRideFeedbackState" _uid="279" feedback="{emergency_ride_feedback}" value="2" />
+                                <SetEmergencyRideFeedbackFaults name="SetEmergencyRideFeedbackFaults" _uid="280" feedback="{emergency_ride_feedback}" />
+                                <WaitForCondition name="WaitForCondition" _uid="281" timeout="0.000000" message="Emergency ride: waiting for hardware to recover…" />
+                            </ReactiveSequence>
+                        </ReactiveFallback>
+                        <SetEmergencyRideFeedbackState name="SetEmergencyRideFeedbackState" _uid="282" feedback="{emergency_ride_feedback}" value="1" />
+                        <SetEmergencyRideFeedbackFaults name="SetEmergencyRideFeedbackFaults" _uid="283" feedback="{emergency_ride_feedback}" />
+                        <WaitForCondition name="WaitForCondition" _uid="284" timeout="0.000000" message="Emergency ride active — waiting for stop" />
+                    </ReactiveSequence>
+                </KeepRunningUntilFailure>
+            </ForceSuccess>
+            <Script name="Script" _uid="285" code="body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="EmergencyRideBody::227/RefreshFaultRegistry::236">
+        <ForceSuccess name="ForceSuccess" _uid="237">
+            <Sequence name="Sequence" _uid="238">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="239" />
+                <ParallelAll name="ParallelAll" _uid="240" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="EmergencyRideBody::227/RefreshFaultRegistry::236/IsHardwareOperatable::241" _uid="241" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="EmergencyRideBody::227/RefreshFaultRegistry::236/IsSafetyOperatable::260" _uid="260" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="EmergencyRideBody::227/RefreshFaultRegistry::236/IsHardwareOperatable::241">
+        <ParallelAll name="ParallelAll" _uid="242" max_failures="1">
+            <RecordFault name="RecordFault" _uid="243" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="244" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="245" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="246" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="247" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="248" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="249" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="250" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="251" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="252" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="253" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="254" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="255" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="256" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="257" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="258" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="259" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="EmergencyRideBody::227/RefreshFaultRegistry::236/IsSafetyOperatable::260">
+        <ParallelAll name="ParallelAll" _uid="261" max_failures="1">
+            <RecordFault name="RecordFault" _uid="262" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="263" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="264" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="265" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="266" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="267" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="268" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="269" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IdleBody" _fullpath="IdleBody::288">
+        <Sequence name="Sequence" _uid="289">
+            <LogStatus name="LogStatus" _uid="290" message="Idle: no session running, waiting for a goal" />
+            <WaitForMode name="WaitForMode" _uid="291" message="Waiting for a mission to be queued…" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="TeachBody" _fullpath="TeachBody::292">
+        <Sequence name="teach_body" _uid="293">
+            <Script name="Script" _uid="294" code="teach_complete:=false; teach_ok:=false" />
+            <InitTeachSession name="InitTeachSession" _uid="295" goal="{teach_goal}" feedback="{teach_feedback}" map_syncer="{map_syncer}" session_map_id="{session_map_id}" teach_mode="{teach_mode}" action_id="{action_id}" road_path_id="{road_path_id}" zone_id="{zone_id}" />
+            <Switch2 name="Switch2" _uid="296" variable="{teach_mode}" case_1="exploration" case_2="element">
+                <SubTree ID="ExplorationBody" _fullpath="TeachBody::292/ExplorationBody::297" _uid="297" cancel_requested="{cancel_requested}" teach_session_id="{teach_session_id}" teach_complete="{teach_complete}" action_id="{action_id}" session_map_id="{session_map_id}" map_syncer="{map_syncer}" teach_feedback="{teach_feedback}" />
+                <SubTree ID="TeachElementBody" _fullpath="TeachBody::292/TeachElementBody::379" _uid="379" teach_session_id="{teach_session_id}" cancel_requested="{cancel_requested}" zone_id="{zone_id}" road_path_id="{road_path_id}" teach_complete="{teach_complete}" action_id="{action_id}" session_map_id="{session_map_id}" map_syncer="{map_syncer}" teach_feedback="{teach_feedback}" teach_goal="{teach_goal}" />
+                <AlwaysFailure name="AlwaysFailure" _uid="458" />
+            </Switch2>
+            <Script name="Script" _uid="459" code="body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ExplorationBody" _fullpath="TeachBody::292/ExplorationBody::297">
+        <Sequence name="exploration_body" _uid="298">
+            <Script name="Script" _uid="299" code="mapping_started:=false; auto_mode:=false" />
+            <ForceSuccess name="ForceSuccess" _uid="300">
+                <Sequence name="Sequence" _uid="301">
+                    <ReactiveSequence name="setup_guard" _uid="302">
+                        <ScriptCondition name="ScriptCondition" _uid="303" code="cancel_requested == false" />
+                        <Sequence name="setup_phases" _uid="304">
+                            <SlamStartMapping name="SlamStartMapping" _uid="305" map_id="{session_map_id}" timeout="45.0" mapping_started="{mapping_started}" />
+                            <Sequence name="Sequence" _uid="306" _skipIf="session_map_id == 0">
+                                <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="307" feedback="{teach_feedback}" value="8" />
+                                <EstimatePoseFromLandmark name="EstimatePoseFromLandmark" _uid="308" map_syncer="{map_syncer}" timeout="180.0" pose="{initial_pose}" />
+                                <SlamInitPose name="SlamInitPose" _uid="309" timeout="20.000000" pose="{initial_pose}" />
+                            </Sequence>
+                            <Sequence name="Sequence" _uid="310" _skipIf="session_map_id != 0">
+                                <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="311" feedback="{teach_feedback}" value="8" />
+                                <WaitForLandmarkInMap name="WaitForLandmarkInMap" _uid="312" timeout="120.0" start_landmark_id="{start_landmark_id}" />
+                            </Sequence>
+                            <SeedExplorationLandmarks name="SeedExplorationLandmarks" _uid="313" map_syncer="{map_syncer}" feedback="{teach_feedback}" />
+                            <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="314" feedback="{teach_feedback}" value="3" />
+                        </Sequence>
+                    </ReactiveSequence>
+                    <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="315">
+                        <ReactiveSequence name="exploration_guard" _uid="316">
+                            <ScriptCondition name="ScriptCondition" _uid="317" code="cancel_requested == false" />
+                            <ScriptCondition name="ScriptCondition" _uid="318" code="teach_complete == false" />
+                            <TeachControlService name="TeachControlService" _uid="319" teach_complete="{teach_complete}" session_id="{teach_session_id}" />
+                            <SubTree ID="RefreshFaultRegistry" _fullpath="TeachBody::292/ExplorationBody::297/RefreshFaultRegistry::320" _uid="320" auto_mode="{auto_mode}" />
+                            <ReactiveFallback name="safety_guard" _uid="354">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="355" category="SAFETY" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="356">
+                                    <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="357" feedback="{teach_feedback}" value="10" />
+                                    <SetTeachFeedbackFaults name="SetTeachFeedbackFaults" _uid="358" feedback="{teach_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="359" message="Waiting for safety to clear…" timeout="300" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ReactiveFallback name="hw_guard" _uid="360">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="361" category="HARDWARE" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="362">
+                                    <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="363" feedback="{teach_feedback}" value="9" />
+                                    <SetTeachFeedbackFaults name="SetTeachFeedbackFaults" _uid="364" feedback="{teach_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="365" message="Waiting for hardware to recover…" timeout="300" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ReactiveFallback name="loc_guard" _uid="366">
+                                <IsSlamTracking name="IsSlamTracking" _uid="367" />
+                                <Sequence name="Sequence" _uid="368">
+                                    <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="369" feedback="{teach_feedback}" value="11" />
+                                    <WaitForCondition name="WaitForCondition" _uid="370" message="Waiting for tracking to resume…" timeout="300" />
+                                </Sequence>
+                            </ReactiveFallback>
+                            <Parallel name="Parallel" _uid="371" success_count="1" failure_count="1">
+                                <TeachSpeedMonitor name="TeachSpeedMonitor" _uid="372" />
+                                <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="373">
+                                    <TrackExploration name="TrackExploration" _uid="374" min_distance="0.100000" feedback="{teach_feedback}" />
+                                </KeepRunningUntilFailure>
+                            </Parallel>
+                        </ReactiveSequence>
+                    </KeepRunningUntilFailure>
+                </Sequence>
+            </ForceSuccess>
+            <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="375" feedback="{teach_feedback}" value="6" />
+            <Script name="Script" _uid="376" code="teach_ok := teach_complete" />
+            <SlamFinishMapping name="SlamFinishMapping" _uid="377" save_map="{teach_ok}" timeout="120.0" map_id="{session_map_id}" _skipIf="mapping_started == false" />
+            <FinalizeTeachSession name="FinalizeTeachSession" _uid="378" session_map_id="{session_map_id}" action_id="{action_id}" teach_ok="{teach_ok}" feedback="{teach_feedback}" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="TeachBody::292/ExplorationBody::297/RefreshFaultRegistry::320">
+        <ForceSuccess name="ForceSuccess" _uid="321">
+            <Sequence name="Sequence" _uid="322">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="323" />
+                <ParallelAll name="ParallelAll" _uid="324" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="TeachBody::292/ExplorationBody::297/RefreshFaultRegistry::320/IsHardwareOperatable::325" _uid="325" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="TeachBody::292/ExplorationBody::297/RefreshFaultRegistry::320/IsSafetyOperatable::344" _uid="344" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="TeachBody::292/ExplorationBody::297/RefreshFaultRegistry::320/IsHardwareOperatable::325">
+        <ParallelAll name="ParallelAll" _uid="326" max_failures="1">
+            <RecordFault name="RecordFault" _uid="327" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="328" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="329" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="330" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="331" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="332" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="333" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="334" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="335" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="336" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="337" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="338" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="339" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="340" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="341" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="342" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="343" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="TeachBody::292/ExplorationBody::297/RefreshFaultRegistry::320/IsSafetyOperatable::344">
+        <ParallelAll name="ParallelAll" _uid="345" max_failures="1">
+            <RecordFault name="RecordFault" _uid="346" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="347" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="348" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="349" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="350" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="351" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="352" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="353" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="TeachElementBody" _fullpath="TeachBody::292/TeachElementBody::379">
+        <Sequence name="teach_element_body" _uid="380">
+            <Script name="Script" _uid="381" code="auto_mode:=false" />
+            <ForceSuccess name="ForceSuccess" _uid="382">
+                <Sequence name="Sequence" _uid="383">
+                    <ReactiveSequence name="setup_guard" _uid="384">
+                        <ScriptCondition name="ScriptCondition" _uid="385" code="cancel_requested == false" />
+                        <Sequence name="localize_phase" _uid="386">
+                            <Fallback name="Fallback" _uid="387">
+                                <IsLocalizedOnMap name="IsLocalizedOnMap" _uid="388" map_id="{session_map_id}" />
+                                <Sequence name="Sequence" _uid="389">
+                                    <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="390" feedback="{teach_feedback}" value="8" />
+                                    <SlamStartLocalization name="SlamStartLocalization" _uid="391" map_id="{session_map_id}" timeout="30" />
+                                    <EstimatePoseFromLandmark name="EstimatePoseFromLandmark" _uid="392" map_syncer="{map_syncer}" timeout="180.0" pose="{initial_pose}" />
+                                    <SlamInitPose name="SlamInitPose" _uid="393" timeout="20.000000" pose="{initial_pose}" />
+                                    <WaitForSlamLocalized name="WaitForSlamLocalized" _uid="394" timeout="30" />
+                                </Sequence>
+                            </Fallback>
+                            <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="395" feedback="{teach_feedback}" value="3" />
+                        </Sequence>
+                    </ReactiveSequence>
+                    <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="396">
+                        <ReactiveSequence name="element_guard" _uid="397">
+                            <ScriptCondition name="ScriptCondition" _uid="398" code="cancel_requested == false" />
+                            <TeachControlService name="TeachControlService" _uid="399" teach_complete="{teach_complete}" session_id="{teach_session_id}" />
+                            <SubTree ID="RefreshFaultRegistry" _fullpath="TeachBody::292/TeachElementBody::379/RefreshFaultRegistry::400" _uid="400" auto_mode="{auto_mode}" />
+                            <ReactiveFallback name="safety_guard" _uid="434">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="435" category="SAFETY" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="436">
+                                    <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="437" feedback="{teach_feedback}" value="10" />
+                                    <SetTeachFeedbackFaults name="SetTeachFeedbackFaults" _uid="438" feedback="{teach_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="439" message="Waiting for safety to clear…" timeout="300" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ReactiveFallback name="hw_guard" _uid="440">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="441" category="HARDWARE" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="442">
+                                    <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="443" feedback="{teach_feedback}" value="9" />
+                                    <SetTeachFeedbackFaults name="SetTeachFeedbackFaults" _uid="444" feedback="{teach_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="445" message="Waiting for hardware to recover…" timeout="300" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ReactiveFallback name="loc_guard" _uid="446">
+                                <IsSlamTracking name="IsSlamTracking" _uid="447" />
+                                <Sequence name="Sequence" _uid="448">
+                                    <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="449" feedback="{teach_feedback}" value="11" />
+                                    <WaitForCondition name="WaitForCondition" _uid="450" message="Waiting for tracking to resume…" timeout="300" />
+                                </Sequence>
+                            </ReactiveFallback>
+                            <Parallel name="Parallel" _uid="451" success_count="1" failure_count="1">
+                                <TeachCommandDispatcher name="TeachCommandDispatcher" _uid="452" goal="{teach_goal}" feedback="{teach_feedback}" session_map_id="{session_map_id}" teach_complete="{teach_complete}" captured_element="{captured_element}" />
+                                <TeachSpeedMonitor name="TeachSpeedMonitor" _uid="453" />
+                            </Parallel>
+                        </ReactiveSequence>
+                    </KeepRunningUntilFailure>
+                </Sequence>
+            </ForceSuccess>
+            <SetTeachFeedbackState name="SetTeachFeedbackState" _uid="454" feedback="{teach_feedback}" value="6" />
+            <Script name="Script" _uid="455" code="teach_ok := teach_complete" />
+            <PersistTeachElement name="PersistTeachElement" _uid="456" captured_element="{captured_element}" session_map_id="{session_map_id}" action_id="{action_id}" teach_ok="{teach_ok}" zone_id="{zone_id}" road_path_id="{road_path_id}" _skipIf="teach_ok == false" />
+            <FinalizeTeachSession name="FinalizeTeachSession" _uid="457" session_map_id="{session_map_id}" action_id="{action_id}" road_path_id="{road_path_id}" teach_ok="{teach_ok}" feedback="{teach_feedback}" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="TeachBody::292/TeachElementBody::379/RefreshFaultRegistry::400">
+        <ForceSuccess name="ForceSuccess" _uid="401">
+            <Sequence name="Sequence" _uid="402">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="403" />
+                <ParallelAll name="ParallelAll" _uid="404" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="TeachBody::292/TeachElementBody::379/RefreshFaultRegistry::400/IsHardwareOperatable::405" _uid="405" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="TeachBody::292/TeachElementBody::379/RefreshFaultRegistry::400/IsSafetyOperatable::424" _uid="424" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="TeachBody::292/TeachElementBody::379/RefreshFaultRegistry::400/IsHardwareOperatable::405">
+        <ParallelAll name="ParallelAll" _uid="406" max_failures="1">
+            <RecordFault name="RecordFault" _uid="407" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="408" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="409" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="410" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="411" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="412" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="413" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="414" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="415" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="416" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="417" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="418" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="419" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="420" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="421" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="422" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="423" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="TeachBody::292/TeachElementBody::379/RefreshFaultRegistry::400/IsSafetyOperatable::424">
+        <ParallelAll name="ParallelAll" _uid="425" max_failures="1">
+            <RecordFault name="RecordFault" _uid="426" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="427" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="428" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="429" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="430" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="431" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="432" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="433" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="ManualCleanBody" _fullpath="ManualCleanBody::460">
+        <Sequence name="manual_body" _uid="461">
+            <Script name="Script" _uid="462" code="manual_complete:=false; mapping_started:=false; auto_mode:=false" />
+            <InitManualSession name="InitManualSession" _uid="463" feedback="{manual_feedback}" manual_cleaning_id="{manual_cleaning_id}" session_map_id="{session_map_id}" needs_mapping="{needs_mapping}" manual_syncer="{manual_syncer}" />
+            <ForceSuccess name="ForceSuccess" _uid="464">
+                <Sequence name="Sequence" _uid="465">
+                    <ReactiveSequence name="setup_guard" _uid="466">
+                        <ScriptCondition name="ScriptCondition" _uid="467" code="cancel_requested == false" />
+                        <Sequence name="setup_phases" _uid="468">
+                            <SetManualFeedbackState name="SetManualFeedbackState" _uid="469" feedback="{manual_feedback}" value="3" />
+                            <SlamStartMapping name="SlamStartMapping" _uid="470" map_id="0" timeout="45.0" mapping_started="{mapping_started}" _skipIf="needs_mapping == false" />
+                            <SetManualFeedbackState name="SetManualFeedbackState" _uid="471" feedback="{manual_feedback}" value="4" />
+                        </Sequence>
+                    </ReactiveSequence>
+                    <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="472">
+                        <ReactiveSequence name="manual_guard" _uid="473">
+                            <ScriptCondition name="ScriptCondition" _uid="474" code="cancel_requested == false" />
+                            <SubTree ID="RefreshFaultRegistry" _fullpath="ManualCleanBody::460/RefreshFaultRegistry::475" _uid="475" auto_mode="{auto_mode}" />
+                            <ReactiveFallback name="safety_guard" _uid="509">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="510" category="SAFETY" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="511">
+                                    <SetManualFeedbackState name="SetManualFeedbackState" _uid="512" feedback="{manual_feedback}" value="2" />
+                                    <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="513" feedback="{manual_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="514" timeout="0.000000" message="Waiting for safety to clear…" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ReactiveFallback name="hw_guard" _uid="515">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="516" category="HARDWARE" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="517">
+                                    <SetManualFeedbackState name="SetManualFeedbackState" _uid="518" feedback="{manual_feedback}" value="1" />
+                                    <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="519" feedback="{manual_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="520" timeout="0.000000" message="Waiting for hardware to recover…" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ManualCommandDispatcher name="ManualCommandDispatcher" _uid="521" feedback="{manual_feedback}" session_map_id="{session_map_id}" manual_syncer="{manual_syncer}" cancel_requested="{cancel_requested}" completed_run="{completed_run}" />
+                        </ReactiveSequence>
+                    </KeepRunningUntilFailure>
+                </Sequence>
+            </ForceSuccess>
+            <SetManualFeedbackState name="SetManualFeedbackState" _uid="522" feedback="{manual_feedback}" value="5" />
+            <FinalizeManualCleaning name="FinalizeManualCleaning" _uid="523" completed_run="{completed_run}" manual_syncer="{manual_syncer}" feedback="{manual_feedback}" />
+            <SlamStop name="SlamStop" _uid="524" timeout="30.000000" _skipIf="mapping_started == false" />
+            <FinalizeManualSession name="FinalizeManualSession" _uid="525" feedback="{manual_feedback}" manual_cleaning_id="{manual_cleaning_id}" session_map_id="{session_map_id}" />
+            <Script name="Script" _uid="526" code="manual_complete:=true; body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="ManualCleanBody::460/RefreshFaultRegistry::475">
+        <ForceSuccess name="ForceSuccess" _uid="476">
+            <Sequence name="Sequence" _uid="477">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="478" />
+                <ParallelAll name="ParallelAll" _uid="479" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="ManualCleanBody::460/RefreshFaultRegistry::475/IsHardwareOperatable::480" _uid="480" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="ManualCleanBody::460/RefreshFaultRegistry::475/IsSafetyOperatable::499" _uid="499" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="ManualCleanBody::460/RefreshFaultRegistry::475/IsHardwareOperatable::480">
+        <ParallelAll name="ParallelAll" _uid="481" max_failures="1">
+            <RecordFault name="RecordFault" _uid="482" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="483" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="484" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="485" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="486" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="487" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="488" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="489" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="490" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="491" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="492" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="493" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="494" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="495" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="496" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="497" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="498" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="ManualCleanBody::460/RefreshFaultRegistry::475/IsSafetyOperatable::499">
+        <ParallelAll name="ParallelAll" _uid="500" max_failures="1">
+            <RecordFault name="RecordFault" _uid="501" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="502" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="503" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="504" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="505" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="506" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="507" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="508" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="ManualDockBody" _fullpath="ManualDockBody::527">
+        <Sequence name="manual_dock_body" _uid="528">
+            <Script name="Script" _uid="529" code="manual_complete:=false; mapping_started:=false; auto_mode:=true" />
+            <DetectMapContext name="DetectMapContext" _uid="530" session_map_id="{session_map_id}" needs_mapping="{needs_mapping}" />
+            <ForceSuccess name="ForceSuccess" _uid="531">
+                <Sequence name="Sequence" _uid="532">
+                    <ReactiveSequence name="setup_guard" _uid="533">
+                        <ScriptCondition name="ScriptCondition" _uid="534" code="cancel_requested == false" />
+                        <Sequence name="setup_phases" _uid="535">
+                            <SetManualFeedbackState name="SetManualFeedbackState" _uid="536" feedback="{manual_feedback}" value="3" />
+                            <SlamStartMapping name="SlamStartMapping" _uid="537" map_id="0" timeout="45.0" mapping_started="{mapping_started}" _skipIf="needs_mapping == false" />
+                            <WaitForSlamMapping name="WaitForSlamMapping" _uid="538" timeout="30" _skipIf="needs_mapping == false" />
+                        </Sequence>
+                    </ReactiveSequence>
+                    <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="539">
+                        <ReactiveSequence name="dock_guard" _uid="540">
+                            <ScriptCondition name="ScriptCondition" _uid="541" code="cancel_requested == false" />
+                            <SubTree ID="RefreshFaultRegistry" _fullpath="ManualDockBody::527/RefreshFaultRegistry::542" _uid="542" auto_mode="{auto_mode}" />
+                            <ReactiveFallback name="safety_guard" _uid="576">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="577" category="SAFETY" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="578">
+                                    <SetManualFeedbackState name="SetManualFeedbackState" _uid="579" feedback="{manual_feedback}" value="2" />
+                                    <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="580" feedback="{manual_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="581" timeout="0.000000" message="Waiting for safety to clear…" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ReactiveFallback name="hw_guard" _uid="582">
+                                <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="583" category="HARDWARE" />
+                                <ReactiveSequence name="ReactiveSequence" _uid="584">
+                                    <SetManualFeedbackState name="SetManualFeedbackState" _uid="585" feedback="{manual_feedback}" value="1" />
+                                    <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="586" feedback="{manual_feedback}" />
+                                    <WaitForCondition name="WaitForCondition" _uid="587" timeout="0.000000" message="Waiting for hardware to recover…" />
+                                </ReactiveSequence>
+                            </ReactiveFallback>
+                            <ForceFailure name="ForceFailure" _uid="588">
+                                <RecordDuringExecution name="RecordDuringExecution" _uid="589" max_duration_s="0.000000" lease_timeout_s="30.000000" require_recording="false" split_bag="false" scenario="docking">
+                                    <Fallback name="Fallback" _uid="590">
+                                        <Sequence name="Sequence" _uid="591">
+                                            <SetManualFeedbackState name="SetManualFeedbackState" _uid="592" feedback="{manual_feedback}" value="8" />
+                                            <Docking name="Docking" _uid="593" max_retries="10" landmark="closest" number_of_tries="{docking_tries}" success="{docking_success}" resolved_landmark="{docking_resolved_landmark}" />
+                                            <PublishLastLandmark name="PublishLastLandmark" _uid="594" landmark="{docking_resolved_landmark}" />
+                                            <CleaningDocking name="CleaningDocking" _uid="595" timeout="2.000000" command="start" stop_when_power_goal_reached="false" tank_cleaning="true" flush="true" power="100" fresh_water="100" />
+                                            <WaitForResources name="WaitForResources" _uid="596" power="0.000000" timeout_s="0.000000" wait_for_resources="true" tank_cleaning="true" flush="true" fresh_water="100" />
+                                            <PublishDockingStatus name="PublishDockingStatus" _uid="597" dock="true" state="success" />
+                                            <SetManualFeedbackState name="SetManualFeedbackState" _uid="598" feedback="{manual_feedback}" value="9" />
+                                            <Script name="Script" _uid="599" code="manual_complete:=true" />
+                                        </Sequence>
+                                        <ForceFailure name="ForceFailure" _uid="600">
+                                            <PublishDockingStatus name="PublishDockingStatus" _uid="601" dock="true" state="failed" />
+                                        </ForceFailure>
+                                    </Fallback>
+                                </RecordDuringExecution>
+                            </ForceFailure>
+                        </ReactiveSequence>
+                    </KeepRunningUntilFailure>
+                </Sequence>
+            </ForceSuccess>
+            <SlamStop name="SlamStop" _uid="602" timeout="30.000000" _skipIf="mapping_started == false" />
+            <Script name="Script" _uid="603" code="body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="ManualDockBody::527/RefreshFaultRegistry::542">
+        <ForceSuccess name="ForceSuccess" _uid="543">
+            <Sequence name="Sequence" _uid="544">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="545" />
+                <ParallelAll name="ParallelAll" _uid="546" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="ManualDockBody::527/RefreshFaultRegistry::542/IsHardwareOperatable::547" _uid="547" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="ManualDockBody::527/RefreshFaultRegistry::542/IsSafetyOperatable::566" _uid="566" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="ManualDockBody::527/RefreshFaultRegistry::542/IsHardwareOperatable::547">
+        <ParallelAll name="ParallelAll" _uid="548" max_failures="1">
+            <RecordFault name="RecordFault" _uid="549" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="550" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="551" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="552" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="553" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="554" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="555" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="556" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="557" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="558" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="559" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="560" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="561" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="562" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="563" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="564" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="565" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="ManualDockBody::527/RefreshFaultRegistry::542/IsSafetyOperatable::566">
+        <ParallelAll name="ParallelAll" _uid="567" max_failures="1">
+            <RecordFault name="RecordFault" _uid="568" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="569" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="570" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="571" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="572" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="573" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="574" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="575" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="ManualUndockBody" _fullpath="ManualUndockBody::604">
+        <Sequence name="manual_undock_body" _uid="605">
+            <Script name="Script" _uid="606" code="manual_complete:=false; auto_mode:=false" />
+            <ForceSuccess name="ForceSuccess" _uid="607">
+                <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="608">
+                    <ReactiveSequence name="undock_guard" _uid="609">
+                        <ScriptCondition name="ScriptCondition" _uid="610" code="cancel_requested == false" />
+                        <SubTree ID="RefreshFaultRegistry" _fullpath="ManualUndockBody::604/RefreshFaultRegistry::611" _uid="611" auto_mode="{auto_mode}" />
+                        <ReactiveFallback name="safety_guard" _uid="645">
+                            <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="646" category="SAFETY" />
+                            <ReactiveSequence name="ReactiveSequence" _uid="647">
+                                <SetManualFeedbackState name="SetManualFeedbackState" _uid="648" feedback="{manual_feedback}" value="2" />
+                                <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="649" feedback="{manual_feedback}" />
+                                <WaitForCondition name="WaitForCondition" _uid="650" timeout="0.000000" message="Waiting for safety to clear…" />
+                            </ReactiveSequence>
+                        </ReactiveFallback>
+                        <ReactiveFallback name="hw_guard" _uid="651">
+                            <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="652" category="HARDWARE" />
+                            <ReactiveSequence name="ReactiveSequence" _uid="653">
+                                <SetManualFeedbackState name="SetManualFeedbackState" _uid="654" feedback="{manual_feedback}" value="1" />
+                                <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="655" feedback="{manual_feedback}" />
+                                <WaitForCondition name="WaitForCondition" _uid="656" timeout="0.000000" message="Waiting for hardware to recover…" />
+                            </ReactiveSequence>
+                        </ReactiveFallback>
+                        <ForceFailure name="ForceFailure" _uid="657">
+                            <RecordDuringExecution name="RecordDuringExecution" _uid="658" max_duration_s="0.000000" lease_timeout_s="30.000000" require_recording="false" split_bag="false" scenario="docking">
+                                <Fallback name="Fallback" _uid="659">
+                                    <Sequence name="Sequence" _uid="660">
+                                        <SetManualFeedbackState name="SetManualFeedbackState" _uid="661" feedback="{manual_feedback}" value="7" />
+                                        <CleaningDocking name="CleaningDocking" _uid="662" tank_cleaning="false" stop_when_power_goal_reached="false" flush="false" power="0.000000" fresh_water="0.000000" timeout="2.000000" command="stop" />
+                                        <Undocking name="Undocking" _uid="663" max_retries="10" landmark="closest" number_of_tries="{undocking_tries}" success="{undocking_success}" />
+                                        <PublishDockingStatus name="PublishDockingStatus" _uid="664" dock="false" state="success" />
+                                        <Script name="Script" _uid="665" code="manual_complete:=true" />
+                                    </Sequence>
+                                    <ForceFailure name="ForceFailure" _uid="666">
+                                        <PublishDockingStatus name="PublishDockingStatus" _uid="667" dock="false" state="failed" />
+                                    </ForceFailure>
+                                </Fallback>
+                            </RecordDuringExecution>
+                        </ForceFailure>
+                    </ReactiveSequence>
+                </KeepRunningUntilFailure>
+            </ForceSuccess>
+            <Script name="Script" _uid="668" code="body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="ManualUndockBody::604/RefreshFaultRegistry::611">
+        <ForceSuccess name="ForceSuccess" _uid="612">
+            <Sequence name="Sequence" _uid="613">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="614" />
+                <ParallelAll name="ParallelAll" _uid="615" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="ManualUndockBody::604/RefreshFaultRegistry::611/IsHardwareOperatable::616" _uid="616" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="ManualUndockBody::604/RefreshFaultRegistry::611/IsSafetyOperatable::635" _uid="635" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="ManualUndockBody::604/RefreshFaultRegistry::611/IsHardwareOperatable::616">
+        <ParallelAll name="ParallelAll" _uid="617" max_failures="1">
+            <RecordFault name="RecordFault" _uid="618" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="619" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="620" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="621" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="622" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="623" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="624" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="625" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="626" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="627" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="628" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="629" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="630" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="631" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="632" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="633" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="634" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="ManualUndockBody::604/RefreshFaultRegistry::611/IsSafetyOperatable::635">
+        <ParallelAll name="ParallelAll" _uid="636" max_failures="1">
+            <RecordFault name="RecordFault" _uid="637" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="638" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="639" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="640" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="641" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="642" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="643" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="644" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="ManualMapLoadBody" _fullpath="ManualMapLoadBody::669">
+        <Sequence name="manual_map_load_body" _uid="670">
+            <Script name="Script" _uid="671" code="manual_complete:=false; auto_mode:=false" />
+            <InitManualMapLoad name="InitManualMapLoad" _uid="672" goal="{manual_goal}" feedback="{manual_feedback}" map_id="{map_id}" />
+            <ForceSuccess name="ForceSuccess" _uid="673">
+                <ReactiveSequence name="map_load_guard" _uid="674">
+                    <ScriptCondition name="ScriptCondition" _uid="675" code="cancel_requested == false" />
+                    <Sequence name="map_load_phases" _uid="676">
+                        <SetManualFeedbackState name="SetManualFeedbackState" _uid="677" feedback="{manual_feedback}" value="3" />
+                        <LoadMapSyncer name="LoadMapSyncer" _uid="678" map_id="{map_id}" lazy_load="false" map_syncer="{map_syncer}" />
+                        <SlamStartLocalization name="SlamStartLocalization" _uid="679" map_id="{map_id}" timeout="30" />
+                        <ReactiveFallback name="ReactiveFallback" _uid="680">
+                            <IsLocalizedOnMap name="IsLocalizedOnMap" _uid="681" map_id="{map_id}" />
+                            <Sequence name="Sequence" _uid="682">
+                                <SetManualFeedbackState name="SetManualFeedbackState" _uid="683" feedback="{manual_feedback}" value="10" />
+                                <EstimatePoseFromLandmark name="EstimatePoseFromLandmark" _uid="684" map_syncer="{map_syncer}" timeout="180.0" pose="{estimated_pose}" />
+                                <SlamInitPose name="SlamInitPose" _uid="685" pose="{estimated_pose}" timeout="20" />
+                            </Sequence>
+                        </ReactiveFallback>
+                        <SetManualFeedbackState name="SetManualFeedbackState" _uid="686" feedback="{manual_feedback}" value="11" />
+                        <WaitForSlamLocalized name="WaitForSlamLocalized" _uid="687" timeout="30" />
+                        <SetManualFeedbackState name="SetManualFeedbackState" _uid="688" feedback="{manual_feedback}" value="6" />
+                        <Script name="Script" _uid="689" code="manual_complete:=true" />
+                    </Sequence>
+                </ReactiveSequence>
+            </ForceSuccess>
+            <SlamStop name="SlamStop" _uid="690" timeout="30.000000" _skipIf="manual_complete == true" />
+            <Script name="Script" _uid="691" code="body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="ManualCalibrationBody" _fullpath="ManualCalibrationBody::692">
+        <Sequence name="manual_calibration_body" _uid="693">
+            <Script name="Script" _uid="694" code="manual_complete:=false; auto_mode:=false; is_initial_calibration:=false; session_failed:=false" />
+            <ForceSuccess name="ForceSuccess" _uid="695">
+                <Sequence name="Sequence" _uid="696">
+                    <Sequence name="setup_guard" _uid="697">
+                        <ScriptCondition name="ScriptCondition" _uid="698" code="cancel_requested == false" />
+                        <SetManualFeedbackState name="SetManualFeedbackState" _uid="699" feedback="{manual_feedback}" value="12" />
+                    </Sequence>
+                    <Parallel name="Parallel" _uid="700" success_count="1" failure_count="1">
+                        <Fallback name="session" _uid="701">
+                            <CalibrationSession name="CalibrationSession" _uid="702" is_initial_calibration="{is_initial_calibration}" />
+                            <Sequence name="Sequence" _uid="703">
+                                <Script name="Script" _uid="704" code="session_failed:=true" />
+                                <AlwaysFailure name="AlwaysFailure" _uid="705" />
+                            </Sequence>
+                        </Fallback>
+                        <KeepRunningUntilFailure name="KeepRunningUntilFailure" _uid="706">
+                            <ReactiveSequence name="calibration_guard" _uid="707">
+                                <ScriptCondition name="ScriptCondition" _uid="708" code="cancel_requested == false" />
+                                <SetManualFeedbackInitialCalibration name="SetManualFeedbackInitialCalibration" _uid="709" feedback="{manual_feedback}" value="{is_initial_calibration}" />
+                                <SubTree ID="RefreshFaultRegistry" _fullpath="ManualCalibrationBody::692/RefreshFaultRegistry::710" _uid="710" auto_mode="{auto_mode}" />
+                                <ReactiveFallback name="safety_guard" _uid="744">
+                                    <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="745" category="SAFETY" />
+                                    <ReactiveSequence name="ReactiveSequence" _uid="746">
+                                        <SetManualFeedbackState name="SetManualFeedbackState" _uid="747" feedback="{manual_feedback}" value="2" />
+                                        <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="748" feedback="{manual_feedback}" />
+                                        <WaitForCondition name="WaitForCondition" _uid="749" timeout="0.000000" message="Waiting for safety to clear…" />
+                                    </ReactiveSequence>
+                                </ReactiveFallback>
+                                <ReactiveFallback name="hw_guard" _uid="750">
+                                    <IsFaultCategoryClear name="IsFaultCategoryClear" _uid="751" category="HARDWARE" />
+                                    <ReactiveSequence name="ReactiveSequence" _uid="752">
+                                        <SetManualFeedbackState name="SetManualFeedbackState" _uid="753" feedback="{manual_feedback}" value="1" />
+                                        <SetManualFeedbackFaults name="SetManualFeedbackFaults" _uid="754" feedback="{manual_feedback}" />
+                                        <WaitForCondition name="WaitForCondition" _uid="755" timeout="0.000000" message="Waiting for hardware to recover…" />
+                                    </ReactiveSequence>
+                                </ReactiveFallback>
+                                <SetManualFeedbackState name="SetManualFeedbackState" _uid="756" feedback="{manual_feedback}" value="12" />
+                                <WaitForCondition name="WaitForCondition" _uid="757" timeout="0.000000" message="Calibrating — waiting for the operator to finish…" />
+                            </ReactiveSequence>
+                        </KeepRunningUntilFailure>
+                    </Parallel>
+                </Sequence>
+            </ForceSuccess>
+            <SetManualFeedbackState name="SetManualFeedbackState" _uid="758" feedback="{manual_feedback}" value="5" />
+            <Script name="Script" _uid="759" code="manual_complete:=(session_failed == false); body_done:=true" />
+        </Sequence>
+    </BehaviorTree>
+    <BehaviorTree ID="RefreshFaultRegistry" _fullpath="ManualCalibrationBody::692/RefreshFaultRegistry::710">
+        <ForceSuccess name="ForceSuccess" _uid="711">
+            <Sequence name="Sequence" _uid="712">
+                <ClearFaultRegistry name="ClearFaultRegistry" _uid="713" />
+                <ParallelAll name="ParallelAll" _uid="714" max_failures="2">
+                    <SubTree ID="IsHardwareOperatable" _fullpath="ManualCalibrationBody::692/RefreshFaultRegistry::710/IsHardwareOperatable::715" _uid="715" auto_mode="{auto_mode}" />
+                    <SubTree ID="IsSafetyOperatable" _fullpath="ManualCalibrationBody::692/RefreshFaultRegistry::710/IsSafetyOperatable::734" _uid="734" auto_mode="{auto_mode}" />
+                </ParallelAll>
+            </Sequence>
+        </ForceSuccess>
+    </BehaviorTree>
+    <BehaviorTree ID="IsHardwareOperatable" _fullpath="ManualCalibrationBody::692/RefreshFaultRegistry::710/IsHardwareOperatable::715">
+        <ParallelAll name="ParallelAll" _uid="716" max_failures="1">
+            <RecordFault name="RecordFault" _uid="717" code="CAN_BUS">
+                <IsCanOperational name="IsCanOperational" _uid="718" />
+            </RecordFault>
+            <Precondition name="Precondition" _uid="719" if="auto_mode" else="SUCCESS">
+                <ParallelAll name="ParallelAll" _uid="720" max_failures="1">
+                    <RecordFault name="RecordFault" _uid="721" code="LASER_FRONT">
+                        <IsLaserFrontHealthy name="IsLaserFrontHealthy" _uid="722" laser_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="723" code="LASER_BACK">
+                        <IsLaserBackHealthy name="IsLaserBackHealthy" _uid="724" laser_name="back" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="725" code="LASER_CLIFF">
+                        <IsLaserCliffHealthy name="IsLaserCliffHealthy" _uid="726" laser_name="cliff" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="727" code="CAMERA_FRONT">
+                        <IsCameraFrontHealthy name="IsCameraFrontHealthy" _uid="728" camera_name="front" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="729" code="CAMERA_RIGHT">
+                        <IsCameraRightHealthy name="IsCameraRightHealthy" _uid="730" camera_name="right" />
+                    </RecordFault>
+                    <RecordFault name="RecordFault" _uid="731" code="CAMERA_LEFT">
+                        <IsCameraLeftHealthy name="IsCameraLeftHealthy" _uid="732" camera_name="left" />
+                    </RecordFault>
+                </ParallelAll>
+            </Precondition>
+            <AlwaysSuccess name="AlwaysSuccess" _uid="733" />
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="IsSafetyOperatable" _fullpath="ManualCalibrationBody::692/RefreshFaultRegistry::710/IsSafetyOperatable::734">
+        <ParallelAll name="ParallelAll" _uid="735" max_failures="1">
+            <RecordFault name="RecordFault" _uid="736" code="EMERGENCY_STOP">
+                <IsEmergencyStopClear name="IsEmergencyStopClear" _uid="737" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="738" code="BRAKE_TEST">
+                <IsBrakeTestSuccessful name="IsBrakeTestSuccessful" _uid="739" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="740" code="PERSISTENT_OBSTACLE">
+                <IsPersistentObstacleClear name="IsPersistentObstacleClear" _uid="741" />
+            </RecordFault>
+            <RecordFault name="RecordFault" _uid="742" code="HATCH_OPEN">
+                <IsHatchClosed name="IsHatchClosed" _uid="743" />
+            </RecordFault>
+        </ParallelAll>
+    </BehaviorTree>
+    <BehaviorTree ID="SleepBody" _fullpath="SleepBody::761">
+        <WaitForCondition name="WaitForCondition" _uid="762" timeout="0.000000" message="Sleeping — call /wake or send a goal to resume" />
+    </BehaviorTree>
+    <BehaviorTree ID="UpdatingBody" _fullpath="UpdatingBody::763">
+        <WaitForCondition name="WaitForCondition" _uid="764" timeout="0.000000" message="Updating — robot parked until the update completes" />
+    </BehaviorTree>
+    <TreeNodesModel>
+        <Action ID="AlwaysFailure" />
+        <Action ID="AlwaysSuccess" />
+        <Control ID="AsyncFallback" />
+        <Control ID="AsyncSequence" />
+        <Action ID="CalibrationSession">
+            <output_port name="is_initial_calibration" type="bool">True if this is the robot's first calibration</output_port>
+        </Action>
+        <Decorator ID="CaptureMap">
+            <output_port name="map" type="nav_msgs::msg::OccupancyGrid_&lt;std::allocator&lt;void&gt; &gt;">The captured occupancy grid; empty if none arrived</output_port>
+            <input_port name="resume" type="bool" default="false">Continue the window a previous, interrupted run paused</input_port>
+            <input_port name="timeout" type="double" default="15.000000">How long to wait for a map once the child is done, in seconds</input_port>
+        </Decorator>
+        <Action ID="CleaningDocking">
+            <input_port name="timeout" type="double" default="2.000000">Service call timeout in seconds</input_port>
+            <input_port name="fresh_water" type="double" default="0.000000">Fresh water goal [0-100%]</input_port>
+            <input_port name="power" type="double" default="0.000000">Battery power goal [0-100%]</input_port>
+            <input_port name="flush" type="bool" default="false">Release dirty water param</input_port>
+            <input_port name="stop_when_power_goal_reached" type="bool" default="false">Stop charging when power goal reached</input_port>
+            <input_port name="tank_cleaning" type="bool" default="false">Tank cleaning param</input_port>
+            <input_port name="command" type="std::string" default="start">Docking command: 'start' or 'stop'</input_port>
+        </Action>
+        <Action ID="CleaningOff">
+            <output_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Error details on failure</output_port>
+            <input_port name="force" type="bool" default="false">Skip post-clean suction phase</input_port>
+        </Action>
+        <Action ID="ClearFaultRegistry" />
+        <Decorator ID="Delay">
+            <input_port name="delay_msec" type="unsigned int">Tick the child after a few milliseconds</input_port>
+        </Decorator>
+        <Action ID="DetectMapContext">
+            <output_port name="needs_mapping" type="bool">True if a SLAM mapping session must be started</output_port>
+            <output_port name="session_map_id" type="int">Map the session runs on (0 = temporary SLAM session)</output_port>
+        </Action>
+        <Action ID="DetectObstaclesInOccupancyGrid">
+            <input_port name="timeout" type="double" default="60.000000">Detection time budget in seconds</input_port>
+            <output_port name="obstacles" type="std::vector&lt;geometry_msgs::msg::Polygon_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;geometry_msgs::msg::Polygon_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;">Detected obstacles merged with keepout zones; empty on failure</output_port>
+            <input_port name="map_id" type="int" default="0">Backend map id whose keepout zones get merged in</input_port>
+            <input_port name="boundary" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">Closed boundary to scan inside of; an empty path lets the detector derive the interior boundary</input_port>
+            <input_port name="map" type="nav_msgs::msg::OccupancyGrid_&lt;std::allocator&lt;void&gt; &gt;">The occupancy grid to scan</input_port>
+        </Action>
+        <Action ID="Docking">
+            <output_port name="resolved_landmark" type="std::string">Landmark ID actually targeted, with 'closest' resolved to the real station id</output_port>
+            <output_port name="success" type="bool">Whether the docking succeeded</output_port>
+            <input_port name="max_retries" type="int" default="10">Maximum number of docking retries</input_port>
+            <output_port name="number_of_tries" type="unsigned int">Number of retries performed</output_port>
+            <input_port name="landmark" type="std::string" default="closest">Landmark ID of the docking station</input_port>
+        </Action>
+        <Action ID="EmergencyRideExecution">
+            <inout_port name="emergency_ride_finish" type="bool" default="false">Set by MissionControlService on CMD_STOP_EMERGENCY_RIDE to end the action</inout_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Syncer of the EMERGENCY_RIDE action being recorded</input_port>
+        </Action>
+        <Action ID="EmergencyRideServer">
+            <inout_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::EmergencyRideSession_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</inout_port>
+            <output_port name="goal_id" type="std::string">Unique action goal UUID identifying the current session</output_port>
+            <output_port name="goal" type="std::shared_ptr&lt;kira_app_msgs::action::EmergencyRideSession_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Action goal from the client</output_port>
+            <inout_port name="body_done" type="bool" default="true">True when the mode body Sequence has completed</inout_port>
+            <output_port name="cancel_requested" type="bool">Set to true when a cancel has been requested for the active goal</output_port>
+        </Action>
+        <Action ID="EstimatePoseFromLandmark">
+            <output_port name="pose" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;">Computed initial robot pose</output_port>
+            <input_port name="timeout" type="double" default="10.000000">Timeout in seconds for landmark detection</input_port>
+            <input_port name="map_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MapSyncer&gt;">Map syncer with known landmark positions</input_port>
+        </Action>
+        <Action ID="EstimatePoseFromSharedLandmark">
+            <output_port name="pose" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;">Computed initial robot pose</output_port>
+            <input_port name="map_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MapSyncer&gt;">Map syncer of the NEW map being loaded</input_port>
+        </Action>
+        <Control ID="Fallback" />
+        <Decorator ID="FinalizeActionExecution">
+            <input_port name="cancel_requested" type="bool" default="false">True when user cancelled the mission</input_port>
+            <input_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Optional error written by inner nodes on failure</input_port>
+            <input_port name="action_result_details" type="std::optional&lt;kira_grpc_client::ActionResultDetails&gt;">Optional result details written by inner nodes; timestamps are filled in here</input_port>
+            <input_port name="instinctive_docking_request" type="std::optional&lt;kira_bt_executive::InstinctiveDockingRequest&gt;">Set by SuperviseResources when the robot breaks itself off to dock</input_port>
+            <input_port name="interrupt_request" type="std::optional&lt;kira_bt_executive::InterruptRequest&gt;">Set by MissionControlService on interrupt commands</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action syncer (provides action execution ID)</input_port>
+        </Decorator>
+        <Action ID="FinalizeManualCleaning">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="manual_syncer" type="std::shared_ptr&lt;kira_backend_syncer::ManualCleaningRecorderSyncer&gt;">Syncer for this session</input_port>
+            <input_port name="completed_run" type="std::shared_ptr&lt;kira_bt_executive::CompletedManualRun&gt;">Run handed over by ManualCommandDispatcher</input_port>
+        </Action>
+        <Action ID="FinalizeManualSession">
+            <input_port name="session_map_id" type="int" default="0">Map the session ran on</input_port>
+            <input_port name="manual_cleaning_id" type="int" default="0">Persisted manual cleaning row id</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="FinalizeMissionExecution">
+            <output_port name="mission_outcome" type="std::string">Derived outcome: COMPLETED, CANCELED_BY_USER, or ABORTED</output_port>
+            <input_port name="cancel_requested" type="bool" default="false">True when user cancelled</input_port>
+            <input_port name="mission_complete" type="bool" default="false">True when all actions finished</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Last per-action syncer — checked for orphaned action executions</input_port>
+            <input_port name="mission" type="std::shared_ptr&lt;kira_backend_syncer::MissionExecutionSyncer&gt;">MissionExecutionSyncer handle</input_port>
+        </Action>
+        <Action ID="FinalizeTeachSession">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="teach_ok" type="bool">Whether the teach session succeeded</input_port>
+            <input_port name="road_path_id" type="int">Persisted road path ID</input_port>
+            <input_port name="action_id" type="int">Persisted mission action ID</input_port>
+            <input_port name="session_map_id" type="int">Map ID for the session</input_port>
+        </Action>
+        <Action ID="FollowPath">
+            <input_port name="feedback_timeout_s" type="double" default="15.000000">Re-send the goal once the server sent no feedback for this long, 0 or negative disables the check</input_port>
+            <input_port name="max_server_restart_retries" type="int" default="3">How often the goal may be re-sent after the server went away or stopped sending feedback</input_port>
+            <input_port name="server_wait_timeout_s" type="double" default="5.000000">How long to wait for the action server to appear or come back before failing</input_port>
+            <output_port name="traveled_distance" type="float">Distance traveled in meters</output_port>
+            <output_port name="final_state" type="std::string">Final state string from the action result</output_port>
+            <output_port name="success" type="bool">Whether path following succeeded</output_port>
+            <output_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Error details on failure</output_port>
+            <input_port name="transport_paths" type="std::vector&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;" default="">Path index ranges where the robot is in transport mode (no cleaning)</input_port>
+            <input_port name="progress" type="double" default="0.000000">Skip some path from the beginning [0.0-1.0]</input_port>
+            <input_port name="path" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">Path to follow</input_port>
+        </Action>
+        <Decorator ID="ForceFailure" />
+        <Decorator ID="ForceSuccess" />
+        <Action ID="GateCountdown">
+            <inout_port name="armed" type="bool">True while the gate is blocking; consumed when the countdown ends</inout_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="seconds" type="double" default="10.000000">Grace period held after the gate clears before resuming</input_port>
+        </Action>
+        <Action ID="GetDockingGoal">
+            <output_port name="fresh_water" type="double">Fresh water target [0-100%]</output_port>
+            <output_port name="power" type="double">Battery charge target [0-100%]</output_port>
+            <output_port name="flush" type="bool">Release the dirty water</output_port>
+            <output_port name="stop_when_power_goal_reached" type="bool">Stop charging once the charge target is reached</output_port>
+            <output_port name="tank_cleaning" type="bool">Run a tank cleaning cycle</output_port>
+            <output_port name="refill_requested" type="bool">True when the config asks for a resource exchange</output_port>
+            <output_port name="wait_for_resources" type="bool">True for a gating dock that must reach its targets before the mission continues</output_port>
+            <output_port name="landmark" type="std::string">Docking landmark name from config</output_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action syncer (provides execution config)</input_port>
+        </Action>
+        <Action ID="GetInformedA2BGoalInMission">
+            <output_port name="path_segments" type="std::vector&lt;kira_planning_msgs::msg::PathSegment_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;kira_planning_msgs::msg::PathSegment_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;">Path segments network</output_port>
+            <output_port name="map_id" type="int">Backend map ID for the map provider</output_port>
+            <output_port name="goal_pose" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;">Goal pose from execution config</output_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action syncer (provides mission &amp; map)</input_port>
+        </Action>
+        <Action ID="GetMapIdFromSyncer">
+            <output_port name="map_id" type="int">Map ID extracted from the action execution</output_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action execution syncer</input_port>
+        </Action>
+        <Control ID="IfThenElse" />
+        <Action ID="InitManualMapLoad">
+            <output_port name="map_id" type="int">Target map ID to localize on</output_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="goal" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Manual action goal (carries the target map_id)</input_port>
+        </Action>
+        <Action ID="InitManualSession">
+            <output_port name="manual_syncer" type="std::shared_ptr&lt;kira_backend_syncer::ManualCleaningRecorderSyncer&gt;">Syncer used to stream and finalize the session</output_port>
+            <output_port name="needs_mapping" type="bool">True if a SLAM mapping session must be started</output_port>
+            <output_port name="session_map_id" type="int">Map the session runs on (0 = temporary SLAM session)</output_port>
+            <output_port name="manual_cleaning_id" type="int">ID of the created kira.manual_cleaning row (0 if not persisted)</output_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="InitTeachSession">
+            <output_port name="zone_id" type="int">Created zone row ID (0 if none)</output_port>
+            <output_port name="road_path_id" type="int">Created road path ID (0 if none)</output_port>
+            <output_port name="action_id" type="int">Created mission action ID (0 if none)</output_port>
+            <output_port name="teach_mode" type="std::string">Teach mode (exploration | element)</output_port>
+            <output_port name="session_map_id" type="int">Map ID for the session (0 = new)</output_port>
+            <output_port name="map_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MapSyncer&gt;">Map syncer for this session</output_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="goal" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Teach action goal</input_port>
+        </Action>
+        <Decorator ID="Inverter" />
+        <Condition ID="IsBarrierClosed" />
+        <Condition ID="IsBrakeTestSuccessful" />
+        <Condition ID="IsCameraBackLeftHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCameraBackRightHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCameraFrontHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCameraFrontLeftHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCameraFrontRightHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCameraFrontTopHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCameraLeftHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCameraRightHealthy">
+            <input_port name="camera_name" type="std::string">Name of the camera (e.g. front, left)</input_port>
+        </Condition>
+        <Condition ID="IsCanOperational" />
+        <Condition ID="IsDeadmanSwitchReleased" />
+        <Condition ID="IsEmergencyStopClear" />
+        <Condition ID="IsFaultCategoryClear">
+            <input_port name="category" type="std::string">HARDWARE or SAFETY</input_port>
+        </Condition>
+        <Condition ID="IsHatchClosed" />
+        <Condition ID="IsInZone">
+            <input_port name="use_footprint" type="bool" default="false">Count a footprint overlap as being in the zone, not just the base link. Always false if the publisher has no footprint.</input_port>
+            <input_port name="zone_type" type="std::string">Zone type label, e.g. cleaning, ramp, black_surface</input_port>
+        </Condition>
+        <Condition ID="IsLaserBackHealthy">
+            <input_port name="laser_name" type="std::string">Name of the laser (e.g. front, back)</input_port>
+        </Condition>
+        <Condition ID="IsLaserCliffHealthy">
+            <input_port name="laser_name" type="std::string">Name of the laser (e.g. front, back)</input_port>
+        </Condition>
+        <Condition ID="IsLaserFrontHealthy">
+            <input_port name="laser_name" type="std::string">Name of the laser (e.g. front, back)</input_port>
+        </Condition>
+        <Condition ID="IsLocalizedOnMap">
+            <input_port name="map_id" type="int">Map ID the robot must be localized on</input_port>
+        </Condition>
+        <Condition ID="IsPersistentObstacleClear" />
+        <Condition ID="IsSeatSwitchReleased" />
+        <Condition ID="IsSlamActive" />
+        <Condition ID="IsSlamLocalized" />
+        <Condition ID="IsSlamTracking" />
+        <Condition ID="IsStageActive">
+            <input_port name="pass_if_unavailable" type="bool" default="true">SUCCESS while /system/state is missing or stale</input_port>
+            <input_port name="accept_degraded" type="bool" default="true">DEGRADED counts as active</input_port>
+            <input_port name="stage" type="std::string">Stage name from stages.yaml, or several separated by ';', e.g. low_level;cleaning</input_port>
+        </Condition>
+        <Condition ID="IsStartStopButtonPressed" />
+        <Decorator ID="KeepRunningUntilFailure" />
+        <Action ID="LifecycleService" />
+        <Action ID="LoadMapSyncer">
+            <output_port name="map_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MapSyncer&gt;">Loaded MapSyncer handle</output_port>
+            <input_port name="lazy_load" type="bool" default="true">Whether to defer file downloads</input_port>
+            <input_port name="map_id" type="int">Map ID to load</input_port>
+        </Action>
+        <Action ID="LoadMissionExecution">
+            <output_port name="mission" type="std::shared_ptr&lt;kira_backend_syncer::MissionExecutionSyncer&gt;">Loaded MissionExecutionSyncer handle</output_port>
+            <input_port name="mission_goal" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Mission goal from action server</input_port>
+        </Action>
+        <Action ID="LogStatus">
+            <input_port name="message" type="std::string">Message to log</input_port>
+        </Action>
+        <Decorator ID="LoopBool">
+            <output_port name="value" type="bool" />
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;bool, std::allocator&lt;bool&gt; &gt; &gt;" />
+        </Decorator>
+        <Decorator ID="LoopDouble">
+            <output_port name="value" type="double" />
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;double, std::allocator&lt;double&gt; &gt; &gt;" />
+        </Decorator>
+        <Decorator ID="LoopInt">
+            <output_port name="value" type="int" />
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;int, std::allocator&lt;int&gt; &gt; &gt;" />
+        </Decorator>
+        <Decorator ID="LoopString">
+            <output_port name="value" type="std::string" />
+            <input_port name="if_empty" type="BT::NodeStatus" default="SUCCESS">Status to return if queue is empty: SUCCESS, FAILURE, SKIPPED</input_port>
+            <inout_port name="queue" type="std::shared_ptr&lt;std::deque&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt;, std::allocator&lt;std::__cxx11::basic_string&lt;char, std::char_traits&lt;char&gt;, std::allocator&lt;char&gt; &gt; &gt; &gt; &gt;" />
+        </Decorator>
+        <Action ID="ManualCleaningExecution">
+            <inout_port name="manual_cleaning_finish" type="bool" default="false">Set by MissionControlService on CMD_FINISH_MANUAL_CLEANING to end the action</inout_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Syncer of the MANUAL_CLEANING action being recorded</input_port>
+        </Action>
+        <Action ID="ManualCommandDispatcher">
+            <input_port name="cancel_requested" type="bool" default="true">True when the manual session is ending; false for transient guard pauses</input_port>
+            <output_port name="completed_run" type="std::shared_ptr&lt;kira_bt_executive::CompletedManualRun&gt;">Finished run handed to FinalizeManualCleaning</output_port>
+            <input_port name="manual_syncer" type="std::shared_ptr&lt;kira_backend_syncer::ManualCleaningRecorderSyncer&gt;">Syncer the state samples are streamed to (may be empty)</input_port>
+            <input_port name="session_map_id" type="int" default="0">Map the session runs on (0 = SLAM only)</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="ManualServer">
+            <input_port name="manual_complete" type="bool">True when manual session finished successfully</input_port>
+            <input_port name="manual_cleaning_id" type="int" default="0">Id of the persisted kira.manual_cleaning row</input_port>
+            <inout_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</inout_port>
+            <output_port name="goal_id" type="std::string">Unique action goal UUID identifying the current session</output_port>
+            <output_port name="goal" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Action goal from the client</output_port>
+            <inout_port name="body_done" type="bool" default="true">True when the mode body Sequence has completed</inout_port>
+            <output_port name="cancel_requested" type="bool">Set to true when a cancel has been requested for the active goal</output_port>
+        </Action>
+        <Action ID="MissionControlService">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="countdown_s" type="double" default="10.000000">Grace period before an interrupted mission resumes by itself</input_port>
+            <output_port name="user_pause_armed" type="bool">Cleared on CMD_MANUAL_CLEANING so the user-pause grace countdown is skipped when manual cleaning is injected from a pause</output_port>
+            <output_port name="emergency_ride_finish" type="bool">Set to true on CMD_STOP_EMERGENCY_RIDE to end an in-mission emergency ride action</output_port>
+            <input_port name="current_action_type" type="std::string" default="">Type of the currently running action; gates CMD_MANUAL_CLEANING to interruptible actions and, while MANUAL_CLEANING or EMERGENCY_RIDE itself runs, ignores every command except its finish/stop command</input_port>
+            <output_port name="manual_cleaning_finish" type="bool">Set to true on CMD_FINISH_MANUAL_CLEANING to end an in-mission manual cleaning action</output_port>
+            <output_port name="interrupt_request" type="std::optional&lt;kira_bt_executive::InterruptRequest&gt;">Describes what to do after interrupt</output_port>
+            <inout_port name="mission_interrupted" type="bool">Set by CMD_INTERRUPT, clears itself when the countdown ends</inout_port>
+            <output_port name="halt_action_execution" type="bool">Set to true on CMD_SKIP_CURRENT or CMD_SKIP_ALL</output_port>
+            <inout_port name="mission_paused" type="bool">Toggled by CMD_PAUSE / CMD_RESUME</inout_port>
+            <output_port name="cancel_requested" type="bool">Set to true on CMD_ABORT</output_port>
+        </Action>
+        <Action ID="MissionServer">
+            <input_port name="mission_outcome" type="std::string">Mission outcome set by body tree</input_port>
+            <inout_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</inout_port>
+            <output_port name="goal_id" type="std::string">Unique action goal UUID identifying the current session</output_port>
+            <output_port name="goal" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Action goal from the client</output_port>
+            <inout_port name="body_done" type="bool" default="true">True when the mode body Sequence has completed</inout_port>
+            <output_port name="cancel_requested" type="bool">Set to true when a cancel has been requested for the active goal</output_port>
+        </Action>
+        <Action ID="ModeArbiter">
+            <output_port name="submode" type="std::string">The committed robot submode</output_port>
+            <output_port name="mode" type="std::string">The committed robot mode</output_port>
+            <inout_port name="body_done" type="bool" default="true">True when the active mode body has completed</inout_port>
+        </Action>
+        <Action ID="MonitorPathEvents">
+            <output_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Error details on failure</output_port>
+            <input_port name="events" type="std::vector&lt;kira_grpc_client::Event, std::allocator&lt;kira_grpc_client::Event&gt; &gt;">Events to execute along path</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action execution syncer</input_port>
+        </Action>
+        <Control ID="Parallel">
+            <input_port name="failure_count" type="int" default="1">number of children that need to fail to trigger a FAILURE</input_port>
+            <input_port name="success_count" type="int" default="-1">number of children that need to succeed to trigger a SUCCESS</input_port>
+        </Control>
+        <Control ID="ParallelAll">
+            <input_port name="max_failures" type="int" default="1">If the number of children returning FAILURE exceeds this value, ParallelAll returns FAILURE</input_port>
+        </Control>
+        <Action ID="PeekAction">
+            <output_port name="out_action_type" type="std::string">String representation of the action type</output_port>
+            <output_port name="out_action" type="kira_grpc_client::MissionAction">The current mission action</output_port>
+            <input_port name="action_index" type="int">Current action index</input_port>
+            <input_port name="mission" type="std::shared_ptr&lt;kira_backend_syncer::MissionSyncer&gt;">MissionSyncer handle</input_port>
+        </Action>
+        <Action ID="PersistTeachElement">
+            <output_port name="road_path_id" type="int">ROAD_PATH: id of the road path row the capture created, 0 if none</output_port>
+            <inout_port name="teach_ok" type="bool">Whether capture persistence succeeded</inout_port>
+            <inout_port name="action_id" type="int">Persisted mission action ID</inout_port>
+            <input_port name="session_map_id" type="int">Map ID for the session</input_port>
+            <output_port name="zone_id" type="int">ZONE: id of the last zone row the capture created, 0 if none</output_port>
+            <input_port name="captured_element" type="std::shared_ptr&lt;kira_bt_executive::CompletedCapture&gt;">Element captured by TeachCommandDispatcher</input_port>
+        </Action>
+        <Action ID="PlanInformedA2B">
+            <output_port name="path" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">Planned path result</output_port>
+            <output_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Error details on failure</output_port>
+            <output_port name="transport_paths" type="std::vector&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;">Transport segments (no cleaning)</output_port>
+            <input_port name="live_costmap" type="bool" default="false">Overlay live obstacles on the provided map</input_port>
+            <input_port name="map_id" type="int">Backend map ID; planner reads /provided_costmap for it</input_port>
+            <input_port name="path_segments" type="std::vector&lt;kira_planning_msgs::msg::PathSegment_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;kira_planning_msgs::msg::PathSegment_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;" default="">Path segments network</input_port>
+            <input_port name="goal_pose" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;">Goal pose for planning</input_port>
+        </Action>
+        <Action ID="PlanMissionExecution">
+            <input_port name="mission" type="std::shared_ptr&lt;kira_backend_syncer::MissionExecutionSyncer&gt;">MissionExecutionSyncer handle</input_port>
+        </Action>
+        <Action ID="PlanNextAction">
+            <inout_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared mission feedback object</inout_port>
+            <output_port name="mission_complete" type="bool">True when all actions are done, false on unrecoverable error</output_port>
+            <output_port name="current_action_type" type="std::string">String representation of the action type</output_port>
+            <inout_port name="instinctive_docking_request" type="std::optional&lt;kira_bt_executive::InstinctiveDockingRequest&gt;">Set by SuperviseResources when the robot breaks itself off to dock</inout_port>
+            <inout_port name="interrupt_request" type="std::optional&lt;kira_bt_executive::InterruptRequest&gt;">Set by MissionControlService</inout_port>
+            <output_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action syncer for status updates</output_port>
+            <output_port name="current_action" type="kira_grpc_client::MissionAction">The action to execute next</output_port>
+            <input_port name="mission" type="std::shared_ptr&lt;kira_backend_syncer::MissionExecutionSyncer&gt;">MissionExecutionSyncer handle</input_port>
+        </Action>
+        <Decorator ID="Precondition">
+            <input_port name="else" type="BT::NodeStatus" default="FAILURE">Return status if condition is false</input_port>
+            <input_port name="if" type="std::string" />
+        </Decorator>
+        <Action ID="PrepareFillinExecution">
+            <output_port name="boundary_path" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">Boundary as a drivable, closed path; empty when static</output_port>
+            <output_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Error details on failure</output_port>
+            <output_port name="transport_paths" type="std::vector&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;">Transport segments (no cleaning); empty when dynamic</output_port>
+            <output_port name="resume_mapping" type="bool">True when the boundary lap is being re-entered part-way, so the mapping window has to be resumed instead of restarted</output_port>
+            <output_port name="boundary_transport_paths" type="std::vector&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;">Transport segments of the boundary lap; empty when static</output_port>
+            <output_port name="start_progress" type="double">Resume progress [0.0-1.0]</output_port>
+            <output_port name="stored_coverage_path" type="bool">True when a previous run already planned this fillin's coverage path, so the planning block can be skipped</output_port>
+            <output_port name="path" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">Path to follow; empty when dynamic</output_port>
+            <output_port name="events" type="std::vector&lt;kira_grpc_client::Event, std::allocator&lt;kira_grpc_client::Event&gt; &gt;">Events to execute along path</output_port>
+            <output_port name="map_id" type="int">Map the action runs on</output_port>
+            <output_port name="dynamic" type="bool">True when the coverage path has to be planned here</output_port>
+            <output_port name="boundary_polygon" type="geometry_msgs::msg::Polygon_&lt;std::allocator&lt;void&gt; &gt;">Boundary as a polygon for planning; empty when static</output_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action execution syncer</input_port>
+        </Action>
+        <Action ID="PreparePathExecution">
+            <output_port name="transport_paths" type="std::vector&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;kira_msgs::msg::SkippedSegmentIndex_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;">Transport segments (no cleaning)</output_port>
+            <output_port name="start_progress" type="double">Resume progress [0.0-1.0]</output_port>
+            <output_port name="events" type="std::vector&lt;kira_grpc_client::Event, std::allocator&lt;kira_grpc_client::Event&gt; &gt;">Events to execute along path</output_port>
+            <output_port name="path" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">Path to follow</output_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action execution syncer</input_port>
+        </Action>
+        <Action ID="PrepareProvidedCostmap">
+            <input_port name="timeout" type="double" default="30.000000">Time in seconds to wait for a fresh /provided_costmap</input_port>
+            <input_port name="clearing_radius" type="double" default="0.150000">Road-path corridor clearing half-width in meters</input_port>
+            <input_port name="map_id" type="int">Backend map ID to compose /provided_costmap for</input_port>
+        </Action>
+        <Action ID="PublishDiagnostic">
+            <input_port name="level" type="std::string" default="WARN">OK, WARN, ERROR or STALE</input_port>
+            <input_port name="message" type="std::string">Operator-facing text</input_port>
+            <input_port name="diagnostic_id" type="std::string">Catalogue ID, e.g. PRE_PROCESS/...</input_port>
+        </Action>
+        <Action ID="PublishDockingStatus">
+            <input_port name="state" type="std::string">Docking handler status state string</input_port>
+            <input_port name="dock" type="bool">True when docking, false when undocking</input_port>
+        </Action>
+        <Action ID="PublishLastLandmark">
+            <input_port name="landmark" type="std::string">Landmark id of the docking station</input_port>
+        </Action>
+        <Control ID="ReactiveFallback" />
+        <Control ID="ReactiveSequence" />
+        <Decorator ID="RecordDuringExecution">
+            <output_port name="bag_path" type="std::string">Path of the bag being written</output_port>
+            <output_port name="session_id" type="std::string">UUID of the started recording session</output_port>
+            <input_port name="split_bag" type="bool" default="false">On stop, force the shared bag to roll over to a new file so this recording ends at a clean file boundary (deferred to idle close when no other session is active)</input_port>
+            <input_port name="require_recording" type="bool" default="false">Strict mode: FAIL the child if recording can't be confirmed/lost</input_port>
+            <input_port name="lease_timeout_s" type="double" default="30.000000">Auto-stop if no keepalive within this window (crash safety)</input_port>
+            <input_port name="max_duration_s" type="double" default="0.000000">Hard cap in seconds; 0 -&gt; configured default</input_port>
+            <input_port name="bag_dir" type="std::string" default="">Override output dir; empty -&gt; configured default</input_port>
+            <input_port name="scenario" type="std::string" default="">Recorder scenario; empty -&gt; recorder default</input_port>
+        </Decorator>
+        <Decorator ID="RecordFault">
+            <input_port name="code" type="std::string">Stable fault code for the wrapped check</input_port>
+        </Decorator>
+        <Control ID="RecoveryNode">
+            <input_port name="number_of_retries" type="int" default="1">Number of retries</input_port>
+        </Control>
+        <Decorator ID="Repeat">
+            <input_port name="num_cycles" type="int">Repeat a successful child up to N times. Use -1 to create an infinite loop.</input_port>
+        </Decorator>
+        <Decorator ID="RetryUntilSuccessful">
+            <input_port name="num_attempts" type="int">Execute again a failing child up to N times. Use -1 to create an infinite loop.</input_port>
+        </Decorator>
+        <Action ID="RobotModePublisher">
+            <input_port name="submode" type="std::string">The current robot submode</input_port>
+            <input_port name="mode" type="std::string">The current robot mode</input_port>
+        </Action>
+        <Decorator ID="RunOnce">
+            <input_port name="then_skip" type="bool" default="true">If true, skip after the first execution, otherwise return the same NodeStatus returned once bu the child.</input_port>
+        </Decorator>
+        <Action ID="Script">
+            <input_port name="code" type="std::string">Piece of code that can be parsed</input_port>
+        </Action>
+        <Condition ID="ScriptCondition">
+            <input_port name="code" type="BT::AnyTypeAllowed">Piece of code that can be parsed. Must return false or true</input_port>
+        </Condition>
+        <Action ID="SeedExplorationLandmarks">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="map_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MapSyncer&gt;">Map syncer for the current session</input_port>
+        </Action>
+        <Control ID="Sequence" />
+        <Control ID="SequenceWithMemory" />
+        <Action ID="SetBlackboard">
+            <inout_port name="output_key" type="BT::AnyTypeAllowed">Name of the blackboard entry where the value should be written</inout_port>
+            <input_port name="value" type="BT::AnyTypeAllowed">Value to be written int othe output_key</input_port>
+        </Action>
+        <Action ID="SetEmergencyRideFeedbackFaults">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::EmergencyRideSession_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetEmergencyRideFeedbackState">
+            <input_port name="value" type="unsigned char">State value to set</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::EmergencyRideSession_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetEmergencyRideFilterFeedback">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::EmergencyRideSession_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetFeedbackFaults">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetFeedbackState">
+            <input_port name="value" type="unsigned char">State value to set</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Mission_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetManualFeedbackFaults">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetManualFeedbackInitialCalibration">
+            <input_port name="value" type="bool">True if this is the robot's first calibration</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetManualFeedbackState">
+            <input_port name="value" type="unsigned char">State value to set</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Manual_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetTeachFeedbackFaults">
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="SetTeachFeedbackState">
+            <input_port name="value" type="unsigned char">State value to set</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Decorator ID="SkipUnlessUpdated">
+            <input_port name="entry" type="BT::Any">Entry to check</input_port>
+        </Decorator>
+        <Action ID="SlamFinishMapping">
+            <output_port name="map_id" type="int">The resulting map ID</output_port>
+            <input_port name="timeout" type="double" default="120.000000">Timeout for the entire action in seconds</input_port>
+            <input_port name="save_map" type="bool" default="true">Whether to save and upload the map file</input_port>
+        </Action>
+        <Action ID="SlamInitPose">
+            <input_port name="timeout" type="double" default="20.000000">Timeout for the service call in seconds</input_port>
+            <input_port name="pose" type="geometry_msgs::msg::PoseStamped_&lt;std::allocator&lt;void&gt; &gt;">Initial pose for localization</input_port>
+        </Action>
+        <Action ID="SlamStartLocalization">
+            <input_port name="timeout" type="double" default="30.000000">Timeout for the service call in seconds</input_port>
+            <input_port name="map_id" type="int">Map ID to localize on</input_port>
+        </Action>
+        <Action ID="SlamStartMapping">
+            <output_port name="mapping_started" type="bool">Set true if mapping was (or may have been) started, including when halted mid-start, so cleanup can stop the orphaned session</output_port>
+            <input_port name="timeout" type="double" default="30.000000">Timeout for the service call in seconds</input_port>
+            <input_port name="map_id" type="int" default="0">Map ID (0 = new map, &gt;0 = extend existing)</input_port>
+        </Action>
+        <Action ID="SlamStop">
+            <input_port name="timeout" type="double" default="30.000000">Timeout for the service call in seconds</input_port>
+        </Action>
+        <Action ID="Sleep">
+            <input_port name="msec" type="unsigned int" />
+        </Action>
+        <Action ID="SleepTimer">
+            <input_port name="timeout_sec" type="double" default="0.000000">Seconds of resting before requesting SLEEP; 0 disables the timer</input_port>
+        </Action>
+        <Action ID="SmartFill">
+            <output_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Error details on failure</output_port>
+            <output_port name="used_planner_name" type="std::string">Planner pattern that produced the returned path</output_port>
+            <output_port name="obstacles_considered" type="bool">Whether obstacles were considered in the attempt that succeeded</output_port>
+            <output_port name="success" type="bool">Whether planning succeeded</output_port>
+            <input_port name="max_attempts" type="int" default="0">Max planning attempts; &lt;=0 uses the full with/without-obstacles retry heuristic</input_port>
+            <input_port name="timeout" type="double" default="0.000000">Overall planning time budget in seconds; &lt;=0 disables the budget</input_port>
+            <input_port name="planning_mode" type="std::string" default="">fast/full (see SmartFill.action); empty uses the planner's own default</input_port>
+            <output_port name="requested_planner_name" type="std::string">Planner pattern that was asked for, after the smartfill_planner global parameter is resolved</output_port>
+            <input_port name="planner_name" type="std::string" default="">Planner pattern to try first (see SmartFill.action); empty uses the smartfill_planner global parameter</input_port>
+            <output_port name="coverage_path" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">Resulting coverage path</output_port>
+            <input_port name="obstacles" type="std::vector&lt;geometry_msgs::msg::Polygon_&lt;std::allocator&lt;void&gt; &gt;, std::allocator&lt;geometry_msgs::msg::Polygon_&lt;std::allocator&lt;void&gt; &gt; &gt; &gt;" default="">Obstacles/holes/no-go zones inside the boundary</input_port>
+            <input_port name="boundary" type="geometry_msgs::msg::Polygon_&lt;std::allocator&lt;void&gt; &gt;">Boundary polygon to cover</input_port>
+        </Action>
+        <Action ID="StoreBoundaryProgress">
+            <input_port name="progress" type="double">Live boundary-lap progress, fed by TrackPathExecution's progress output port</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action execution syncer</input_port>
+        </Action>
+        <Action ID="StoreCoveragePath">
+            <input_port name="planner" type="std::string">Planner that actually produced the path</input_port>
+            <input_port name="coverage_path" type="nav_msgs::msg::Path_&lt;std::allocator&lt;void&gt; &gt;">The path SmartFill produced</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action execution syncer</input_port>
+        </Action>
+        <SubTree ID="SubTree">
+            <input_port name="_autoremap" type="bool" default="false">If true, all the ports with the same name will be remapped</input_port>
+        </SubTree>
+        <Action ID="SupervisePathExecution">
+            <input_port name="stuck_radius_m" type="double" default="1.500000">The robot counts as moving once it leaves a circle of this radius around the pose it last left</input_port>
+            <input_port name="blocked_trigger_service" type="std::string" default="">Trigger service that forces the blocked-path verdict, for testing; empty means no service</input_port>
+            <input_port name="escalated_blocked_time_s" type="double" default="30.000000">blocked_time_s once a blocked path has been skipped ahead, 0 or negative keeps blocked_time_s</input_port>
+            <input_port name="stuck_time_s" type="double" default="10.000000">Stuck once it has failed to leave that circle for this long, 0 or negative disables both rules</input_port>
+            <input_port name="blocked_time_s" type="double" default="120.000000">Fail once stuck away from the goal for this long, 0 or negative disables the check</input_port>
+            <input_port name="near_goal_remaining_length_m" type="double" default="0.000000">Give up and report success once stuck with less than this much path left, 0 or negative disables the check</input_port>
+            <input_port name="feedback_stale_time_s" type="double" default="2.000000">A feedback gap this long rewinds the supervision timers, so a restarting navigator does not read as sustained stuck</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">The running action, whose escalation step selects the escalated timings below</input_port>
+            <input_port name="near_goal_stuck_time_s" type="double" default="5.000000">How long the near-goal condition must hold</input_port>
+            <output_port name="action_error" type="std::optional&lt;kira_grpc_client::ActionError&gt;">Error details on failure</output_port>
+            <input_port name="escalated_stuck_time_s" type="double" default="0.000000">stuck_time_s once a blocked path has been skipped ahead, 0 or negative keeps stuck_time_s</input_port>
+            <input_port name="escalation_threshold" type="double" default="0.000000">Blocked-path failure also requires recovery escalation above this</input_port>
+            <input_port name="min_execution_time_s" type="double" default="0.000000">Blocked-path failure also requires the path to have run at least this long, 0 or negative disables the requirement</input_port>
+            <input_port name="near_goal_trigger_service" type="std::string" default="">Trigger service that forces the near-goal give-up, for testing; empty means no service</input_port>
+        </Action>
+        <Action ID="SuperviseResources">
+            <output_port name="instinctive_docking_request" type="std::optional&lt;kira_bt_executive::InstinctiveDockingRequest&gt;">Why the robot broke off to dock, or nothing</output_port>
+            <output_port name="halt_action_execution" type="bool">Set to true to halt the running action</output_port>
+            <input_port name="halt_pending" type="bool">Already halting (e.g. by operator command) — stand down</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Syncer of the running action</input_port>
+        </Action>
+        <Control ID="Switch10">
+            <input_port name="case_10" type="std::string" />
+            <input_port name="case_8" type="std::string" />
+            <input_port name="case_5" type="std::string" />
+            <input_port name="case_7" type="std::string" />
+            <input_port name="case_4" type="std::string" />
+            <input_port name="case_6" type="std::string" />
+            <input_port name="case_3" type="std::string" />
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_9" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Control ID="Switch2">
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Control ID="Switch3">
+            <input_port name="case_3" type="std::string" />
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Control ID="Switch4">
+            <input_port name="case_4" type="std::string" />
+            <input_port name="case_3" type="std::string" />
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Control ID="Switch5">
+            <input_port name="case_5" type="std::string" />
+            <input_port name="case_4" type="std::string" />
+            <input_port name="case_3" type="std::string" />
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Control ID="Switch6">
+            <input_port name="case_5" type="std::string" />
+            <input_port name="case_4" type="std::string" />
+            <input_port name="case_6" type="std::string" />
+            <input_port name="case_3" type="std::string" />
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Control ID="Switch7">
+            <input_port name="case_5" type="std::string" />
+            <input_port name="case_7" type="std::string" />
+            <input_port name="case_4" type="std::string" />
+            <input_port name="case_6" type="std::string" />
+            <input_port name="case_3" type="std::string" />
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Control ID="Switch9">
+            <input_port name="case_8" type="std::string" />
+            <input_port name="case_5" type="std::string" />
+            <input_port name="case_7" type="std::string" />
+            <input_port name="case_4" type="std::string" />
+            <input_port name="case_6" type="std::string" />
+            <input_port name="case_3" type="std::string" />
+            <input_port name="case_2" type="std::string" />
+            <input_port name="case_9" type="std::string" />
+            <input_port name="case_1" type="std::string" />
+            <input_port name="variable" type="std::string" />
+        </Control>
+        <Action ID="TeachCommandDispatcher">
+            <output_port name="captured_element" type="std::shared_ptr&lt;kira_bt_executive::CompletedCapture&gt;">Completed capture handed to PersistTeachElement</output_port>
+            <input_port name="teach_complete" type="bool">Set by TeachControlService on FINISH_SESSION</input_port>
+            <input_port name="session_map_id" type="int">Map ID for the session</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+            <input_port name="goal" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Teach action goal (provides capture_type)</input_port>
+        </Action>
+        <Action ID="TeachControlService">
+            <input_port name="session_id" type="std::string">Unique session id (action goal UUID); a change flushes stale commands</input_port>
+            <inout_port name="teach_complete" type="bool">Set true on FINISH_SESSION; read to detect the start of a new session</inout_port>
+        </Action>
+        <Action ID="TeachServer">
+            <input_port name="teach_complete" type="bool">True when teach session finished successfully</input_port>
+            <input_port name="action_id" type="int">ID of created mission action</input_port>
+            <input_port name="session_map_id" type="int">Map ID from the session</input_port>
+            <inout_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</inout_port>
+            <input_port name="teach_ok" type="bool">True when teach persistence succeeded</input_port>
+            <input_port name="road_path_id" type="int">ROAD_PATH: id of the road path row the capture created, 0 if none</input_port>
+            <output_port name="goal_id" type="std::string">Unique action goal UUID identifying the current session</output_port>
+            <output_port name="goal" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Goal_&lt;std::allocator&lt;void&gt; &gt; const&gt;">Action goal from the client</output_port>
+            <input_port name="zone_id" type="int">ZONE: id of the last zone row the capture created, 0 if none</input_port>
+            <inout_port name="body_done" type="bool" default="true">True when the mode body Sequence has completed</inout_port>
+            <output_port name="cancel_requested" type="bool">Set to true when a cancel has been requested for the active goal</output_port>
+        </Action>
+        <Action ID="TeachSpeedMonitor" />
+        <Decorator ID="Timeout">
+            <input_port name="msec" type="unsigned int">After a certain amount of time, halt() the child if it is still running.</input_port>
+        </Decorator>
+        <Action ID="TrackExploration">
+            <input_port name="min_distance" type="double" default="0.100000">Minimum distance [m] the robot must move before the current pose is appended to the recorded path</input_port>
+            <input_port name="feedback" type="std::shared_ptr&lt;kira_app_msgs::action::Teach_Feedback_&lt;std::allocator&lt;void&gt; &gt; &gt;">Shared feedback object</input_port>
+        </Action>
+        <Action ID="TrackPathExecution">
+            <output_port name="progress" type="double">Live progress from the last feedback message, updated every tick regardless of report_progress.</output_port>
+            <input_port name="report_progress" type="bool" default="true">Write live progress to the backend's visible progress column. Set false to keep logging pose, cleaning state and resource consumption for this leg without advancing the row's reported progress.</input_port>
+            <input_port name="action_syncer" type="std::shared_ptr&lt;kira_backend_syncer::MissionActionExecutionSyncer&gt;">Per-action execution syncer</input_port>
+        </Action>
+        <Action ID="Undocking">
+            <output_port name="success" type="bool">Whether the undocking succeeded</output_port>
+            <input_port name="max_retries" type="int" default="10">Maximum number of undocking retries</input_port>
+            <output_port name="number_of_tries" type="unsigned int">Number of retries performed</output_port>
+            <input_port name="landmark" type="std::string" default="">Landmark ID of the docking station</input_port>
+        </Action>
+        <Action ID="UnsetBlackboard">
+            <input_port name="key" type="std::string">Key of the entry to remove</input_port>
+        </Action>
+        <Action ID="Wait">
+            <input_port name="duration_sec" type="double" default="1.000000">Duration to wait in seconds</input_port>
+        </Action>
+        <Action ID="WaitForCondition">
+            <input_port name="timeout" type="double" default="0.000000">Seconds to wait before failing; &lt;= 0 waits indefinitely</input_port>
+            <input_port name="message" type="std::string" default="Waiting…">Message logged while waiting</input_port>
+        </Action>
+        <Action ID="WaitForLandmarkInMap">
+            <output_port name="start_landmark_id" type="std::string">ID of the first landmark detected in the map</output_port>
+            <input_port name="timeout" type="double" default="120.000000">Timeout in seconds waiting for landmark in Carto</input_port>
+        </Action>
+        <Action ID="WaitForMission">
+            <input_port name="message" type="std::string" default="Waiting for a mission to be queued…">Log message displayed while idling</input_port>
+        </Action>
+        <Action ID="WaitForMode">
+            <input_port name="message" type="std::string" default="Waiting for a mission to be queued…">Log message displayed while idling</input_port>
+        </Action>
+        <Action ID="WaitForResources">
+            <input_port name="timeout_s" type="double" default="0.000000">Give up after this long; 0 =&gt; use the node's ROS param</input_port>
+            <input_port name="flush" type="bool" default="false">Dirty water release was requested; like tank_cleaning it makes a still-full tank a failure</input_port>
+            <input_port name="tank_cleaning" type="bool" default="false">Tank cleaning was requested; only then is a full tank a failure</input_port>
+            <input_port name="fresh_water" type="double" default="0.000000">Fresh water target [0-100%]</input_port>
+            <input_port name="power" type="double" default="0.000000">Battery charge target [0-100%]</input_port>
+            <input_port name="wait_for_resources" type="bool" default="false">Block until the targets are reached, then validate the exchange. False =&gt; return SUCCESS immediately without waiting or validating</input_port>
+        </Action>
+        <Action ID="WaitForSlamLocalized">
+            <input_port name="timeout" type="int" default="30">Timeout in seconds</input_port>
+        </Action>
+        <Action ID="WaitForSlamMapping">
+            <input_port name="timeout" type="int" default="30">Timeout in seconds</input_port>
+        </Action>
+        <Action ID="WaitForSystemTarget">
+            <output_port name="outcome" type="std::string">reached|converged|timeout|unavailable</output_port>
+            <input_port name="accept_converged" type="bool" default="true">Also succeed once the system converged below the target</input_port>
+            <input_port name="no_state_grace_s" type="int" default="15">Give up when /system/state is missing or stale this long</input_port>
+            <input_port name="timeout_s" type="int" default="180">Give up after this many seconds</input_port>
+            <input_port name="target" type="std::string" default="FULL">STANDBY, MAINTENANCE or FULL</input_port>
+        </Action>
+        <Decorator ID="WaitValueUpdate">
+            <input_port name="entry" type="BT::Any">Entry to check</input_port>
+        </Decorator>
+        <Action ID="WasEntryUpdated">
+            <input_port name="entry" type="BT::Any">Entry to check</input_port>
+        </Action>
+        <Control ID="WhileDoElse" />
+    </TreeNodesModel>
+</root>

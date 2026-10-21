@@ -1,0 +1,55 @@
+[data-category] {
+  --category-color: #6b7280;
+}
+[data-category='Control'] {
+  --category-color: #1d4ed8;
+}
+[data-category='Action'] {
+  --category-color: #6d28d9;
+}
+[data-category='Condition'] {
+  --category-color: #0e7490;
+}
+[data-category='Decorator'] {
+  --category-color: #b45309;
+}
+[data-category='SubTree'] {
+  --category-color: #475569;
+}
+
+.execution-status {
+  flex-shrink: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: #475569;
+}
+
+.execution-status[data-status='RUNNING'] {
+  background: #facc15;
+  border-color: #a16207;
+  color: #422006;
+}
+.execution-status[data-status='SUCCESS'] {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #166534;
+}
+.execution-status[data-status='FAILURE'] {
+  background: #fee2e2;
+  border-color: #dc2626;
+  color: #991b1b;
+}
+.execution-status[data-status='IDLE'] {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #475569;
+}
+.execution-status[data-status='SKIPPED'] {
+  background: #fafafa;
+  border-color: #d4d4d4;
+  color: #525252;
+}

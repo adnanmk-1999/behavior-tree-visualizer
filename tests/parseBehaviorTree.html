@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Behavior Tree parser checks</title>
+  </head>
+  <body>
+    <h1>Behavior Tree parser checks</h1>
+    <pre id="result" role="status">Running…</pre>
+    <script type="module">
+      import { parseBehaviorTree } from '/src/utils/parseBehaviorTree.ts'
+      import { behaviorTreeToFlow } from '/src/utils/behaviorTreeToFlow.ts'
+      import { layoutTree, NODE_HEIGHT, NODE_WIDTH } from '/src/utils/layoutTree.ts'
+      import { resolveSubTree } from '/src/utils/resolveSubTree.ts'
+      import { getNodeCategory } from '/src/utils/getNodeCategory.ts'
+
+      const result = document.querySelector('#result')
+      let checks = 0
+
+      function assert(condition, message) {
+        if (!condition) throw new Error(message)
+        checks++
+      }
+
+      function rejects(xml, message) {
+        let error
+        try {
+          parseBehaviorTree(xml)
+        } catch (cause) {
+          error = cause
+        }
+        assert(error instanceof Error && message.test(error.message), `Expected error: ${message}`)
+      }
+
+      function flatten(nodes) {
+        return nodes.flatMap((node) => [node, ...flatten(node.children)])
+      }
+
+      try {
+        const response = await fetch('/tree.xml')
+        assert(response.ok, `Real XML could not be loaded: HTTP ${response.status}`)
+        const xml = await response.text()
+        const parsed = parseBehaviorTree(xml)
+        const source = new DOMParser().parseFromString(xml, 'application/xml')
+        const definitions = Array.from(source.documentElement.children).filter(
+          (element) => element.tagName === 'BehaviorTree',
+        )
+        assert(
+          parsed.behaviorTrees.length === 53,
+          'The supplied XML must retain all 53 definitions',
+        )
+        assert(
+          parsed.behaviorTrees.length === definitions.length,
+          'Definition count differs from XML',
+        )
+        assert(parsed.attributes.BTCPP_format === '4', 'Document attributes were lost')
+        assert(Object.keys(parsed.nodeModels).length === 160, 'Node model categories were lost')
+        assert(parsed.behaviorTrees[0].ID === 'RobotTree', 'RobotTree was not detected')
+        assert(parsed.behaviorTrees[0]._fullpath === '', 'The empty root path was lost')
+        assert(
+          flatten(parsed.behaviorTrees[0].children).length === 28,
+          'RobotTree was expanded or lost nodes',
+        )
+        const nodes = parsed.behaviorTrees.flatMap((tree) => flatten(tree.children))
+        assert(nodes.length === 765, 'The supplied XML must retain all 765 nodes')
+        assert(nodes.filter((node) => node._uid !== undefined).length === 765, 'UIDs were lost')
+        const references = nodes.filter((node) => node.tag === 'SubTree')
+        assert(references.length === 52, 'SubTree reference count changed')
+        assert(
+          references.every((node) => node.ID && node.children.length === 0),
+          'SubTrees must stay references',
+        )
+        assert(
+          !nodes.some((node) => node.tag === 'TreeNodesModel'),
+          'Models became executable nodes',
+        )
+
+        function compareChildren(elements, children) {
+          assert(elements.length === children.length, 'Child count changed')
+          Array.from(elements).forEach((element, index) => {
+            const node = children[index]
+            assert(node.tag === element.tagName, 'Tag or child order changed')
+            assert(node._uid === (element.getAttribute('_uid') ?? undefined), 'UID changed')
+            assert(node.name === (element.getAttribute('name') ?? undefined), 'Name changed')
+            assert(node.ID === (element.getAttribute('ID') ?? undefined), 'Node ID changed')
+            assert(
+              Object.keys(node.attributes).length === element.attributes.length,
+              'Attributes were lost',
+            )
+            for (const attribute of element.attributes) {
+              assert(
+                node.attributes[attribute.name] === attribute.value,
+                `Attribute changed: ${attribute.name}`,
+              )
+            }
+            compareChildren(element.children, node.children)
+          })
+        }
+
+        definitions.forEach((element, index) => {
+          const tree = parsed.behaviorTrees[index]
+          assert(tree.ID === element.getAttribute('ID'), 'Definition ID or order changed')
+          assert(tree._fullpath === element.getAttribute('_fullpath'), 'Definition path changed')
+          compareChildren(element.children, tree.children)
+        })
+        const idleTrees = parsed.behaviorTrees.filter((tree) => tree.ID === 'IdleBody')
+        assert(idleTrees.length === 2, 'Repeated IDs were overwritten')
+        assert(idleTrees[0]._fullpath !== idleTrees[1]._fullpath, 'Repeated ID paths were lost')
+
+        const robotTree = parsed.behaviorTrees.find((tree) => tree.ID === 'RobotTree')
+        const flow = layoutTree(behaviorTreeToFlow(robotTree, parsed.nodeModels))
+        const byId = new Map(flow.nodes.map((node) => [node.id, node]))
+        assert(
+          flow.nodes.length === 28 && flow.edges.length === 27,
+          'RobotTree graph counts changed',
+        )
+        assert(flow.warnings.length === 0, 'The real RobotTree must not need fallback IDs')
+        assert(flow.nodes[0].id === '1', 'The first graph node must have UID 1')
+        assert(byId.get('1').data.tag === 'KeepRunningUntilFailure', 'Wrong root graph node')
+        assert(byId.get('2').data.tag === 'ReactiveSequence', 'ReactiveSequence 2 is missing')
+        assert(byId.get('4').data.tag === 'MissionServer', 'MissionServer 4 is missing')
+        assert(byId.get('10').data.tag === 'Switch5', 'Switch5 10 is missing')
+        assert(byId.get('34').data.label === 'MissionBody', 'SubTree label is missing')
+        for (const [uid, category] of [
+          ['2', 'Control'],
+          ['4', 'Action'],
+          ['38', 'Decorator'],
+          ['44', 'Condition'],
+          ['34', 'SubTree'],
+          ['129', 'Action'],
+          ['59', 'Condition'],
+        ]) {
+          const node = nodes.find((candidate) => candidate._uid === uid)
+          assert(
+            getNodeCategory(node, parsed.nodeModels) === category,
+            `Wrong category for UID ${uid}`,
+          )
+        }
+        for (const tree of parsed.behaviorTrees) {
+          const graph = layoutTree(behaviorTreeToFlow(tree, parsed.nodeModels))
+          const sourceNodes = flatten(tree.children)
+          graph.nodes.forEach((node, index) => {
+            assert(node.type === 'behavior-tree', 'Custom node renderer is missing')
+            assert(node.id === sourceNodes[index]._uid, 'Custom node UID changed')
+            assert(
+              JSON.stringify(node.data.attributes) ===
+                JSON.stringify(sourceNodes[index].attributes),
+              'Inspector attributes changed',
+            )
+            for (const other of graph.nodes.slice(index + 1)) {
+              assert(
+                Math.abs(node.position.x - other.position.x) >= NODE_WIDTH ||
+                  Math.abs(node.position.y - other.position.y) >= NODE_HEIGHT,
+                `${tree.ID}: nodes overlap`,
+              )
+            }
+          })
+        }
+        for (const node of flatten(robotTree.children)) {
+          const children = flow.edges.filter((edge) => edge.source === node._uid)
+          assert(
+            JSON.stringify(children.map((edge) => edge.target)) ===
+              JSON.stringify(node.children.map((child) => child._uid)),
+            'Graph edges or child order differ from XML',
+          )
+          children.forEach((edge, index) => {
+            const child = byId.get(edge.target)
+            assert(
+              child.position.y >= byId.get(edge.source).position.y + NODE_HEIGHT,
+              'Layout is not top-down',
+            )
+            if (index > 0)
+              assert(
+                child.position.x > byId.get(children[index - 1].target).position.x,
+                'Layout changed sibling order',
+              )
+          })
+        }
+        flow.nodes.forEach((node, index) => {
+          for (const other of flow.nodes.slice(index + 1)) {
+            assert(
+              Math.abs(node.position.x - other.position.x) >= NODE_WIDTH ||
+                Math.abs(node.position.y - other.position.y) >= NODE_HEIGHT,
+              `Nodes ${node.id} and ${other.id} overlap`,
+            )
+          }
+        })
+
+        for (const reference of references) {
+          const target = resolveSubTree(reference, parsed.behaviorTrees)
+          assert(target.ID === reference.ID, 'Resolved SubTree ID differs from its reference')
+          assert(
+            target._fullpath === reference.attributes._fullpath,
+            'Resolved the wrong SubTree instance',
+          )
+        }
+
+        function openSubTree(from, ID, expectedPath) {
+          const reference = flatten(from.children).find(
+            (node) => node.tag === 'SubTree' && node.ID === ID,
+          )
+          assert(reference !== undefined, `Missing reference from ${from.ID} to ${ID}`)
+          const target = resolveSubTree(reference, parsed.behaviorTrees)
+          assert(target._fullpath === expectedPath, `Wrong instance for ${ID}`)
+          return target
+        }
+
+        openSubTree(robotTree, 'BootupBody', 'BootupBody::11')
+        const mission = openSubTree(robotTree, 'MissionBody', 'MissionBody::34')
+        const dispatch = openSubTree(
+          mission,
+          'ActionDispatchSwitch',
+          'MissionBody::34/ActionDispatchSwitch::120',
+        )
+        openSubTree(
+          dispatch,
+          'ExecDriveToPose',
+          'MissionBody::34/ActionDispatchSwitch::120/ExecDriveToPose::201',
+        )
+        const missionFaults = openSubTree(
+          mission,
+          'RefreshFaultRegistry',
+          'MissionBody::34/RefreshFaultRegistry::47',
+        )
+        const emergency = openSubTree(robotTree, 'EmergencyRideBody', 'EmergencyRideBody::227')
+        const emergencyFaults = openSubTree(
+          emergency,
+          'RefreshFaultRegistry',
+          'EmergencyRideBody::227/RefreshFaultRegistry::236',
+        )
+        assert(
+          missionFaults !== emergencyFaults &&
+            missionFaults._fullpath !== emergencyFaults._fullpath,
+          'Repeated RefreshFaultRegistry instances were conflated',
+        )
+
+        const fixture = parseBehaviorTree(`<root BTCPP_format="4" main_tree_to_execute="RobotTree">
+          <BehaviorTree ID="RobotTree">
+            <Sequence name="main" _uid="0001">
+              <!-- Whitespace and comments must not become nodes. -->
+              <CustomRobotNode ID="Move" name="A &amp; B" _uid="0002" port="{goal}" />
+              <SubTree ID="RobotTree" _uid="0003" />
+              <Script code="globalThis.__wp01Executed = true" />
+              <parsererror />
+            </Sequence>
+          </BehaviorTree>
+          <TreeNodesModel><BehaviorTree ID="ModelOnly" /><Action ID="CustomRobotNode" /></TreeNodesModel>
+        </root>`)
+        const sequence = fixture.behaviorTrees[0].children[0]
+        assert(fixture.behaviorTrees.length === 1, 'A model definition was parsed as a tree')
+        assert(fixture.nodeModels.CustomRobotNode === 'Action', 'Custom model was not extracted')
+        assert(fixture.nodeModels.ModelOnly === 'Unknown', 'Unsupported model category was guessed')
+        const modelsFixture = parseBehaviorTree(`<root BTCPP_format="4">
+          <BehaviorTree ID="T"><Action ID="CustomCheck" _uid="1" /></BehaviorTree>
+          <TreeNodesModel>
+            <Condition ID="CustomCheck"><input_port name="code" /></Condition>
+            <Action ID="Conflicting" /><Decorator ID="Conflicting" /><Action ID="Conflicting" />
+            <Action ID="__proto__" /><Condition />
+          </TreeNodesModel>
+        </root>`)
+        assert(modelsFixture.nodeModels.CustomCheck === 'Condition', 'Generic model category lost')
+        assert(
+          modelsFixture.nodeModels.Conflicting === 'Unknown',
+          'Conflicting models were guessed',
+        )
+        assert(Object.hasOwn(modelsFixture.nodeModels, '__proto__'), 'Special model ID lost')
+        assert(
+          !Object.hasOwn(modelsFixture.nodeModels, 'code'),
+          'Model ports became registered nodes',
+        )
+        assert(
+          behaviorTreeToFlow(modelsFixture.behaviorTrees[0], modelsFixture.nodeModels).nodes[0].data
+            .category === 'Condition',
+          'Model was not preferred over generic tag',
+        )
+        assert(
+          Object.keys(
+            parseBehaviorTree('<root BTCPP_format="4"><BehaviorTree ID="T" /></root>').nodeModels,
+          ).length === 0,
+          'Missing models must produce an empty map',
+        )
+        assert(
+          fixture.behaviorTrees[0]._fullpath === undefined,
+          'Missing path became an empty path',
+        )
+        assert(
+          fixture.attributes.main_tree_to_execute === 'RobotTree',
+          'Main-tree metadata was lost',
+        )
+        assert(sequence._uid === '0001', 'UIDs must remain strings, including leading zeros')
+        assert(sequence.children.length === 4, 'Comments became nodes or child order changed')
+        assert(sequence.children[0].tag === 'CustomRobotNode', 'Custom tag was not preserved')
+        assert(sequence.children[0].name === 'A & B', 'XML entities were not decoded')
+        assert(sequence.children[0].attributes.port === '{goal}', 'Port expressions were changed')
+        assert(sequence.children[1].ID === 'RobotTree', 'Self-reference was not preserved')
+        assert(sequence.children[1].children.length === 0, 'Self-reference was expanded')
+        assert(sequence.children[2]._uid === undefined, 'Missing UID was invented')
+        assert(
+          sequence.children[2].attributes.code === 'globalThis.__wp01Executed = true',
+          'Script text changed',
+        )
+        assert(globalThis.__wp01Executed === undefined, 'Script behavior was executed')
+        assert(
+          sequence.children[3].tag === 'parsererror',
+          'A custom tag was mistaken for a parse error',
+        )
+
+        rejects('', /Invalid XML/)
+        rejects('<root BTCPP_format="4"><BehaviorTree></root>', /Invalid XML/)
+        rejects('<html />', /BTCPP_format/)
+        rejects('<root BTCPP_format="3" />', /BTCPP_format/)
+        rejects('<root BTCPP_format="4"><TreeNodesModel /></root>', /No <BehaviorTree>/)
+        rejects('<root BTCPP_format="4"><BehaviorTree /></root>', /missing its ID/)
+        rejects(
+          '<root BTCPP_format="4"><BehaviorTree ID="T"><SubTree /></BehaviorTree></root>',
+          /missing its ID/,
+        )
+        rejects(
+          '<root BTCPP_format="4"><BehaviorTree ID="T"><SubTree ID="T"><Action /></SubTree></BehaviorTree></root>',
+          /without child elements/,
+        )
+        result.textContent = `PASS: ${checks} assertions. Real XML: 53 definitions, 765 UIDs, 160 node models, 52 correctly resolved SubTree references; RobotTree graph: 28 nodes, 27 edges. All WP-03 paths, WP-04 categories, attributes and layouts passed; no overlapping nodes.`
+      } catch (error) {
+        result.textContent = `FAIL: ${error.message}`
+        throw error
+      }
+    </script>
+  </body>
+</html>
