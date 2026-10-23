@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
+import BehaviorTreeLegend from '@/components/BehaviorTreeLegend.vue'
+import ViewportHelp from '@/components/ViewportHelp.vue'
 import type { SubtreeVisibility } from '@/utils/expandBehaviorTreeFlow'
 
 defineProps<{
@@ -49,44 +51,48 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
     @pointerover="tooltipsDismissed = false"
     @focusin="tooltipsDismissed = false"
   >
-    <section class="viewport-status" aria-label="Tree status">
-      <button
-        class="status-header"
-        type="button"
-        :aria-expanded="statusExpanded"
-        :aria-controls="`${id}-status`"
-        @click="statusExpanded = !statusExpanded"
-      >
-        <span>Tree status</span>
-        <AppIcon name="down" class="status-chevron" />
-      </button>
-      <div
-        :id="`${id}-status`"
-        class="status-expansion"
-        :class="{ expanded: statusExpanded }"
-        :aria-hidden="!statusExpanded"
-        :inert="!statusExpanded"
-      >
-        <div class="status-content">
-          <div class="status-lines">
-            <div>{{ nodeCount }} nodes</div>
-            <div>{{ edgeCount }} connections</div>
-            <div>
-              Zoom: <span aria-label="Zoom level">{{ Math.round(zoom * 100) }}%</span>
-            </div>
-            <div>Path: {{ runningPathOnly ? 'Running only' : 'All nodes' }}</div>
-            <div>
-              Subtrees:
-              {{
-                hasSubtreeOverrides
-                  ? 'Custom'
-                  : subtreeModes.find((mode) => mode.value === subtrees)?.status
-              }}
+    <div class="viewport-left">
+      <section class="viewport-status" aria-label="Tree Details">
+        <button
+          class="status-header"
+          type="button"
+          :aria-expanded="statusExpanded"
+          :aria-controls="`${id}-status`"
+          @click="statusExpanded = !statusExpanded"
+        >
+          <span>Tree Details</span>
+          <AppIcon name="down" class="status-chevron" />
+        </button>
+        <div
+          :id="`${id}-status`"
+          class="status-expansion"
+          :class="{ expanded: statusExpanded }"
+          :aria-hidden="!statusExpanded"
+          :inert="!statusExpanded"
+        >
+          <div class="status-content">
+            <div class="status-lines">
+              <div>{{ nodeCount }} nodes</div>
+              <div>{{ edgeCount }} connections</div>
+              <div>
+                Zoom: <span aria-label="Zoom level">{{ Math.round(zoom * 100) }}%</span>
+              </div>
+              <div>Path: {{ runningPathOnly ? 'Running only' : 'All nodes' }}</div>
+              <div>
+                Subtrees:
+                {{
+                  hasSubtreeOverrides
+                    ? 'Custom'
+                    : subtreeModes.find((mode) => mode.value === subtrees)?.status
+                }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+      <BehaviorTreeLegend />
+    </div>
+    <ViewportHelp class="viewport-info" />
 
     <div class="viewport-actions" aria-label="Viewport controls">
       <div class="button-group" role="group" aria-label="Zoom controls">
@@ -167,18 +173,37 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
   pointer-events: none;
   color: var(--bt-text);
 }
-.viewport-status,
+.viewport-left,
+.viewport-info,
 .viewport-actions {
   position: absolute;
 }
 .viewport-status,
+.viewport-left :deep(.graph-legend),
+.viewport-info,
 .button-group {
   pointer-events: auto;
 }
-.viewport-status {
+.viewport-info {
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+.viewport-left {
+  width: min(280px, calc(100% - 16px));
   top: 8px;
   left: 8px;
-  width: min(280px, calc(100% - 16px));
+  max-height: calc(100% - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.viewport-status {
+  width: min(200px, 100%);
+  min-height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
   border-radius: 4px;
   background: var(--bt-overlay-surface);
   box-shadow: var(--bt-overlay-shadow);
@@ -186,11 +211,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
 }
 .status-header {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   width: 100%;
   height: 36px;
-  padding: 0 24px;
+  padding: 0 12px;
   border: 0;
   background: transparent;
   color: inherit;
@@ -215,6 +241,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
 }
 .status-expansion {
   display: grid;
+  min-height: 0;
   grid-template-rows: 0fr;
   transition: grid-template-rows 160ms ease;
 }
@@ -226,11 +253,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
   overflow: hidden;
 }
 .status-lines {
-  max-height: calc(100cqh - 96px);
-  overflow: auto;
-  padding: 8px 24px 16px;
-  font-size: 16px;
-  line-height: 24px;
+  padding: 8px 12px 12px;
+  font-size: 12px;
+  line-height: 20px;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }

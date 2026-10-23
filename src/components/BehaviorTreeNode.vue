@@ -19,8 +19,11 @@ const props = withDefaults(
 defineEmits<{ toggleBranch: [] }>()
 
 const description = computed(() => {
-  const { data, status } = props
-  return `${data.label}\n${data.category} · ${data.registeredType}\nUID ${data.idSource === 'uid' ? data._uid : 'not provided'}\n${status === 'UNOBSERVED' ? 'Not observed' : status}`
+  const { data, status, expandable, expanded } = props
+  const branch = expandable
+    ? `\n${expanded ? 'Expanded' : 'Collapsed'} · Double-click or press Space to toggle`
+    : ''
+  return `${data.label}\n${data.category} · ${data.registeredType}\nUID ${data.idSource === 'uid' ? data._uid : 'not provided'}\n${status === 'UNOBSERVED' ? 'Not observed' : status}${branch}`
 })
 </script>
 
@@ -33,29 +36,15 @@ const description = computed(() => {
     :title="description"
   >
     <Handle type="target" :position="Position.Top" :connectable="false" />
-    <NodeCategoryIcon :category="data.category" />
+    <span class="node-type-cell">
+      <NodeCategoryIcon :category="data.category" />
+    </span>
+    <span class="node-status-cell" :title="status === 'UNOBSERVED' ? 'Not observed' : status">
+      <AppIcon class="status-indicator" :name="status" />
+      <span class="sr-only">{{ status === 'UNOBSERVED' ? 'Not observed' : status }}</span>
+    </span>
     <strong class="node-name">{{ data.label }}</strong>
-    <span class="sr-only">{{ status === 'UNOBSERVED' ? 'Not observed' : status }}</span>
-    <AppIcon class="status-indicator" :name="status" />
-    <button
-      v-if="data.collapsible"
-      type="button"
-      class="nodrag nopan"
-      :aria-label="`${expanded ? 'Collapse' : 'Expand'} ${data.label} ${data.tag === 'SubTree' ? 'subtree' : 'children'}`"
-      :aria-expanded="expanded"
-      :disabled="!expandable"
-      :title="
-        expandable
-          ? `${expanded ? 'Collapse' : 'Expand'} ${data.tag === 'SubTree' ? 'subtree' : 'children'} here`
-          : 'No resolvable subtree contents'
-      "
-      @pointerdown.stop
-      @keydown.stop
-      @click.stop="$event.detail < 2 && $emit('toggleBranch')"
-      @dblclick.stop
-    >
-      <AppIcon :name="expanded ? 'minus' : 'plus'" />
-    </button>
+    <AppIcon v-if="expandable" class="branch-indicator" :name="expanded ? 'minus' : 'plus'" />
     <Handle type="source" :position="Position.Bottom" :connectable="false" />
   </div>
 </template>
@@ -68,23 +57,40 @@ const description = computed(() => {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding: 15px 17px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: repeat(2, minmax(0, 1fr));
   border: 1px solid var(--bt-edge);
   border-radius: 4px;
   color: var(--bt-text);
   text-align: left;
   cursor: pointer;
 }
+.node-type-cell,
+.node-status-cell {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid var(--bt-border);
+}
+.node-type-cell {
+  grid-row: 1;
+  border-bottom: 1px solid var(--bt-border);
+}
+.node-status-cell {
+  grid-row: 2;
+}
 .category-icon {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
 }
 .node-name {
-  flex: 1;
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
   min-width: 0;
+  padding: 0 16px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -92,46 +98,27 @@ const description = computed(() => {
   font-weight: 700;
   line-height: 30px;
 }
-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
-button:hover:not(:disabled) {
-  background: var(--bt-surface-hover);
-  border-color: var(--bt-primary);
-}
-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
 .behavior-tree-node:hover {
   outline: 1px solid var(--bt-border-hover);
   outline-offset: 2px;
-}
-.behavior-tree-node[data-status='RUNNING'] {
-  box-shadow: inset 0 0 0 2px var(--bt-primary);
 }
 .behavior-tree-node.selected {
   outline: 2px solid var(--bt-selection);
   outline-offset: 3px;
 }
 .status-indicator {
-  position: absolute;
-  right: 6px;
-  bottom: 4px;
-  width: 14px;
-  height: 14px;
+  width: 20px;
+  height: 20px;
   color: var(--bt-status-text);
+}
+.branch-indicator {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 16px;
+  height: 16px;
+  color: var(--bt-text-secondary);
+  pointer-events: none;
 }
 /* Handles must retain their geometry for edge measurement. */
 :deep(.vue-flow__handle) {

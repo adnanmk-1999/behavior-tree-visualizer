@@ -173,7 +173,7 @@ test('Dagre positions are deterministic, top-down, non-overlapping and retain XM
   assert.deepEqual(layoutTree(behaviorTreeToFlow(tree([]))).nodes, [])
 })
 
-test('node widths follow measured glyphs, reserve subtree controls, and clamp long or empty names', () => {
+test('node widths follow measured glyphs and clamp long or empty names', () => {
   const input = behaviorTreeToFlow(
     tree([
       node('Action', '1', [], { ID: 'Test' }),
@@ -199,7 +199,7 @@ test('node widths follow measured glyphs, reserve subtree controls, and clamp lo
   assert.equal(narrow.width, NODE_MIN_WIDTH)
   assert.ok(wide.width > narrow.width, 'Equal-length names must use their glyph widths')
   assert.ok(wide.width - 74 >= measurements.get('WWWWW'), 'Label must fit after rounding')
-  assert.equal(subtree.width - wide.width, 46, 'SubTree toggle button and gap need space')
+  assert.equal(subtree.width, wide.width, 'Equal labels need the same width across node types')
   assert.equal(long.width, NODE_MAX_WIDTH)
   assert.equal(empty.width, NODE_MIN_WIDTH)
   const withoutMetadata = layoutTree({
@@ -208,7 +208,7 @@ test('node widths follow measured glyphs, reserve subtree controls, and clamp lo
     warnings: [],
   })
   assert.equal(withoutMetadata.nodes[0].width, NODE_MIN_WIDTH)
-  assert.equal(new Set(result.nodes.map((n) => n.width)).size, 4)
+  assert.equal(new Set(result.nodes.map((n) => n.width)).size, 3)
   assert.deepEqual(input, before)
   assert.deepEqual(result.edges, input.edges)
   for (let i = 1; i < result.nodes.length; i++) {

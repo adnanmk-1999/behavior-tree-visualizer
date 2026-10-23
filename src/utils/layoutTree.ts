@@ -17,8 +17,7 @@ export function layoutTree(
 
   // Prefix internal keys so numeric UIDs cannot reorder siblings in Dagre's lookup objects.
   flow.nodes.forEach((node) => {
-    // Reserve the branch toggle even when children are hidden so node width stays stable.
-    const chromeWidth = 36 + 28 + 10 + (node.data?.collapsible ? 36 + 10 : 0)
+    const chromeWidth = 2 + 40 + 16 * 2
     const width = Math.min(
       NODE_MAX_WIDTH,
       Math.max(NODE_MIN_WIDTH, Math.ceil(measureLabel(node.data?.label ?? node.id)) + chromeWidth),

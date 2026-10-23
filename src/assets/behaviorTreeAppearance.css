@@ -25,13 +25,13 @@
   --bt-status-text: var(--bt-primary);
 }
 [data-status='SUCCESS'] {
-  --bt-status-background: color-mix(in srgb, var(--bt-success) 16%, var(--bt-surface));
+  --bt-status-background: color-mix(in srgb, var(--bt-success) 28%, var(--bt-surface));
   --bt-status-border: var(--bt-success);
   --bt-status-text: var(--bt-success-text);
 }
 [data-status='FAILURE'] {
-  --bt-status-background: var(--bt-error-surface);
-  --bt-status-border: var(--bt-error);
+  --bt-status-background: color-mix(in srgb, var(--bt-error) 28%, var(--bt-surface));
+  --bt-status-border: color-mix(in srgb, var(--bt-error) 70%, var(--bt-text));
   --bt-status-text: var(--bt-error-text);
 }
 [data-status='IDLE'] {
@@ -43,6 +43,10 @@
 
 .node-status-surface {
   background: var(--bt-status-background);
+}
+.node-status-surface:is([data-status='RUNNING'], [data-status='SUCCESS'], [data-status='FAILURE']) {
+  border-color: var(--bt-status-border);
+  box-shadow: inset 0 0 0 2px var(--bt-status-border);
 }
 
 .execution-status {

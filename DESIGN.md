@@ -159,7 +159,7 @@ Category icons use pale blue Control, lavender Action, cyan Condition, and a war
 
 Inherit the host's sans-serif family. Only the standalone `index.html` supplies `Roboto, sans-serif`; no font is downloaded. Source Code Pro is the preferred metadata monospace when available, with platform monospace fallbacks. Keep original identifier case and use tabular numerals for time and counts.
 
-The frontmatter defines the title, heading, body, control, and metadata hierarchy. Inspector node names use 20px/28px at weight 500. Graph names retain their larger 24px/30px, weight 700, alongside 28px category icons; layout measures the inherited font when the viewer mounts. The Readable view action supports close inspection without shrinking node labels to fit an overview.
+The frontmatter defines the title, heading, body, control, and metadata hierarchy. Inspector node names use 20px/28px at weight 500. Graph names retain their larger 24px/30px, weight 700, alongside 24px category icons; layout measures the inherited font when the viewer mounts. The Readable view action supports close inspection without shrinking node labels to fit an overview.
 
 ## Layout
 
@@ -171,7 +171,6 @@ Responsive changes follow each component's container width:
 
 | Container and maximum width | Adaptation |
 | --- | --- |
-| Viewer, 1150px | Legend groups stack beside their heading. |
 | App, 1100px | Navigation moves below the tree title and instance path. |
 | Viewer, 1000px | Inspector stacks below the graph and scrolls within a 280px cap. |
 | Playback, 700px | Timeline gets its own row and a taller range-input target. |
@@ -183,23 +182,23 @@ Shared page controls are at least 32px high; coarse pointers get 44px targets. V
 
 ## Elevation & Depth
 
-Surface tone and single-pixel borders establish depth. The viewport status panel and button groups use a restrained shadow and a slightly elevated surface (approximately #30302f). RUNNING uses a yellow inset ring. Selection uses a foreground outer outline, while graph keyboard focus uses a dashed yellow outline. Ordinary controls use a solid yellow focus outline. These states may coexist.
+Surface tone and single-pixel borders establish depth. The viewport status panel and button groups use a restrained shadow and a slightly elevated surface (approximately #30302f). RUNNING, SUCCESS, and FAILURE use yellow, green, and red inset rings. Success and failure use 28% semantic-color fills, and the failure border is lightened for visibility. Selection uses a foreground outer outline, while graph keyboard focus uses a dashed yellow outline. Ordinary controls use a solid yellow focus outline. These states may coexist.
 
 Control background and border feedback lasts 140ms with `ease`; the status panel expands over 160ms without resizing the viewport. Reduced motion removes transitions and animations. Playback updates status without graph animation.
 
 ## Shapes
 
-Use the standard small corner radius across controls, panels, badges, and graph nodes. Graph connections retain square-corner step paths. Timeline thumbs stay circular. Ordinary interface icons render at 20px and viewport control icons at 24px; category icons remain 28px in nodes and 20px in the legend. The bundled MDI SubTree symbol retains its original filled SVG path.
+Use the standard small corner radius across controls, panels, badges, and graph nodes. Graph connections retain square-corner step paths. Timeline thumbs stay circular. Ordinary interface icons render at 20px and viewport control icons at 24px; node category icons render at 24px, node status icons at 20px, and category legend icons at 16px. The bundled MDI SubTree symbol retains its original filled SVG path.
 
 ## Components
 
 - **Buttons and fields:** yellow primary playback, outlined secondary actions, and borderless quiet actions. Shared controls inherit the host font; disabled controls mute visibly and remain disabled semantically. Native selects and range inputs stay native.
 - **Playback:** bordered surface with a section heading, status, transport controls, labeled timeline, and speed select. Play becomes Pause or Replay. Labels use Vue `useId`; separate Vue applications on one page need distinct `app.config.idPrefix` values.
 - **Navigation:** Back/root actions precede breadcrumbs; the current item has stronger text and `aria-current`. Preserve the exact instance path. The standalone skip link appears on keyboard focus.
-- **Graph nodes:** category icon, single-line name, status symbol, and optional branch toggle. Hover reveals full identity and status. Selection and keyboard focus remain separate from the RUNNING ring. Clicking inspects; existing branch expansion and read-only interaction behavior remain intact.
+- **Graph nodes:** a 40px left column stacks the category icon above the status symbol, separated by subtle dividers; the single-line name spans both rows on the right. Expandable branches have a 16px bottom-right plus when collapsed and minus when expanded, without reserving label space. The 76px node height and total width allowance remain the same. Double-click or Space toggles expandable branches; Enter toggles the focused node's inspector; Escape closes it and returns focus to the node when pressed inside the inspector. Arrow keys navigate parents, children, and siblings with one graph tab stop. WASD pans and +/− zooms while a node or the canvas has focus; the hover description reports their expanded/collapsed state. Hover reveals full identity and status. Selection and keyboard focus remain separate from the RUNNING ring. Clicking inspects; existing branch expansion and read-only interaction behavior remain intact.
 - **Viewport overlay:** an absolute, pointer-transparent layer stays anchored to the canvas while graph content pans and zooms. Its controls receive pointer events; gaps pass through. A 280px status panel sits 8px from the top/left, with a 36px disclosure header and stacked real counts, zoom, path, and subtree state. A single bottom-right horizontal row contains blue-grey square buttons with white 24px icons and individual 4px corners. Buttons have 4px gaps; thin separators and 8px spacing distinguish zoom, visibility, and Readable view/Fit tree groups. Edge insets remain 8px. Narrow canvases reduce button width and spacing while keeping the row intact. All eight buttons remain directly visible; there is no eye menu. Visibility controls provide Running path only plus mutually exclusive Collapsed, Running only, and All expanded subtree modes; manual expansion remains visible as Custom in the status panel. Active toggles keep a yellow ring and tint. Tooltips use KopsiHub's light-grey surface-variant, dark on-surface-variant text, 14px type at 1.6 line height, and 5px by 16px padding. They appear on hover/focus and dismiss with Escape. Keep controls available when filtering produces an empty graph.
 - **Inspector:** dark surface with a sticky heading, subtle yellow header accent, close action, category/name/status, identity, and XML attributes. Open subtree separately remains an explicit navigation action.
-- **Legend and disclosures:** explain category, status fill and symbol, running routes, and selection below the canvas. Help and definitions start collapsed. Notices use ordinary surfaces; errors use a tinted semantic surface and readable pale text.
+- **Legend and help:** Category and Status share a content-sized two-column panel below Tree Details, with Category on the left and Status on the right. The panel fits within 280px, uses an 82% opaque #202020 surface, an 18% white border, 2px corners, 8px by 10px padding, and 12px/20px body text. White 15px, 600-weight headings have a 4px bottom margin; columns are separated by a 16px gap. Running-path and selection samples are omitted. The top-right info icon reveals a labeled node-layout example above compact Keyboard shortcuts and Mouse shortcuts sections on hover, keyboard focus, or tap. The example places node type above recorded status on the left and the name across both rows on the right, reusing the graph's icons and semantic colors. Its native popover uses the browser's top layer, inherits the feature theme, shifts or flips within the visible screen, and closes on Escape or outside interaction. The information tooltip uses a 94% opaque #202020 surface, an 18% white border, 2px corners, 8px by 10px padding, and 11px text at 1.35 line height. Rows use a 52px label column and 12px gap; keyboard keys are plain semibold monospace text. These help tokens are separate from the light-grey action-button tooltips. Definitions start collapsed. Notices use ordinary surfaces; errors use a tinted semantic surface and readable pale text.
 
 Shared styles are scoped under `.bt-theme`; category/status styles are imported with Vue scoping by their owning components. Components import the CSS they need. There are no custom portals, dialogs, or file-picker surfaces to theme.
 

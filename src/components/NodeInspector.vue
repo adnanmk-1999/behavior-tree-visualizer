@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppIcon from '@/components/AppIcon.vue'
+import NodeCategoryIcon from '@/components/NodeCategoryIcon.vue'
 import type { BehaviorTreeFlowNodeData } from '@/utils/behaviorTreeToFlow'
 import type { DisplayStatus } from '@/types/behaviorTreeEvents'
 
@@ -25,14 +26,13 @@ defineEmits<{ close: []; openSubtree: [] }>()
     </header>
     <div class="inspector-content">
       <div class="node-summary">
-        <span class="node-category" :data-category="node.category">{{ node.category }}</span>
+        <span class="node-category" :data-category="node.category">
+          <NodeCategoryIcon :category="node.category" aria-hidden="true" />{{ node.category }}
+        </span>
         <strong>{{ node.name || node.label }}</strong>
-        <div class="inspector-status">
-          <span class="execution-status" :data-status="status">{{
-            status === 'UNOBSERVED' ? 'Not observed' : status
-          }}</span>
-          <span>at playback position</span>
-        </div>
+        <span class="execution-status" :data-status="status">
+          <AppIcon :name="status" />{{ status === 'UNOBSERVED' ? 'Not observed' : status }}
+        </span>
         <button
           v-if="node.tag === 'SubTree'"
           type="button"
@@ -145,19 +145,23 @@ h3 .app-icon {
   font-size: 0.875rem;
   font-weight: 500;
 }
+.node-category,
+.execution-status {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+}
+.node-category .category-icon,
+.execution-status .app-icon {
+  width: 16px;
+  height: 16px;
+}
 .node-summary > strong {
   overflow-wrap: anywhere;
   font-size: 1.25rem;
   font-weight: 500;
   line-height: 1.4;
-}
-.inspector-status {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  color: var(--bt-text-secondary);
-  font-size: 0.75rem;
 }
 h4 {
   margin: 0 0 0.75rem;

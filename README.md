@@ -10,13 +10,15 @@ execution status at the selected time.
 
 The engineering workspace uses the full window: tree navigation at the top,
 recorded playback immediately above the graph, and controls anchored inside the
-plain canvas. A collapsible top-left panel shows node/connection counts, zoom,
-and visibility state. Bottom-right icon groups provide zoom and view actions;
+plain canvas. A single legend combines Category on the left and Status on the right
+near the top left. The collapsible Tree Details panel above it shows node/connection
+counts, zoom, and visibility state. Bottom-right icon groups provide zoom and view actions;
 all eight blue-grey viewport buttons stay visible side by side in one horizontal row,
 including Running path only and the three subtree expansion modes.
 Click a node to open the inspector on the right (below the
-graph on smaller screens). The legend remains below the visualization, definitions
-start collapsed, and **How to explore** opens the detailed interaction help.
+graph on smaller screens). Hover or focus the info icon at the top right of the
+canvas for keyboard and mouse shortcuts; tapping also
+toggles it. Definitions start collapsed.
 **Fit tree** is the initial view; **Readable view** brings the root to a legible scale.
 The interface uses the KopsiHub authenticated dark theme with yellow primary
 controls, compact inherited typography, and 4px corners. Presentation tokens live
@@ -62,6 +64,9 @@ on-primary, secondary, error, warning, info, success, on-surface, plus
 For direct `--bt-*` overrides, set the variable on the component's `.bt-theme` root;
 the defaults are defined there, not on the document root. Playback selects and node hover descriptions remain native. Overlay buttons have
 scoped light-grey hover/focus tooltips with dark text; there are no custom portals, dialogs, or file pickers.
+The info button uses a compact dark tooltip in the browser's native popover layer,
+so scroll containers do not clip it. Its scoped `--bt-help-*` tokens inherit optional
+`tooltip`/`on-tooltip` theme roles and the host border color, with KopsiHub fallbacks.
 If mounting multiple independent Vue apps, assign each a distinct
 `app.config.idPrefix` before mount so playback slider labels remain unique.
 
@@ -110,8 +115,8 @@ and display the referenced tree ID. There is no synthetic root.
 `layoutTree(flow, measureLabel)` uses `@dagrejs/dagre` for a top-down layout with
 160–360 pixel node widths, a fixed 76 pixel height, 20 pixel horizontal spacing,
 and 160 pixel vertical spacing. The viewer measures names in the actual 24px bold
-font using a canvas, reserving space for the category icon and SubTree expand/collapse
-button. The pure layout utility uses a deterministic text-width estimate when no
+font using a canvas, reserving 40px for the stacked type/status column plus label
+padding and borders. The pure layout utility uses a deterministic text-width estimate when no
 measurement callback is supplied. Long names truncate at the maximum width;
 full names remain available on hover and in the inspector. XML
 sibling order is retained. The reusable `BehaviorTreeViewer` accepts a `tree`
@@ -143,8 +148,10 @@ breadcrumb leaves the graph unchanged. Repeated IDs include their full instance
 path in breadcrumb labels, and the current instance path is shown above the graph.
 
 Single-click any node, including a SubTree, to inspect it. Double-click a SubTree or Control with children
-(or focus it and press Enter) to expand or collapse that exact instance inline.
-Its plus/minus button provides the same action for keyboard and touch use.
+(or focus it and press Space) to expand or collapse that exact instance inline.
+Arrow Up/Down moves focus to a parent/first child; Left/Right moves between siblings.
+Enter toggles the focused node's inspector; Escape closes it. WASD pans the view and +/− zooms while the canvas or
+a node has focus. Tab enters or leaves the graph instead of visiting every node.
 The inspector's **Open subtree separately** action explicitly emits `open-subtree`,
 including the original ID, UID, and attributes, and retains the breadcrumb workflow.
 Trees open in **Fit tree** view, showing the whole-tree overview.
@@ -174,7 +181,9 @@ For generic syntax, `ID` is the registered type; for SubTrees it remains the tar
 tree ID. The metadata map is optional for conversion, so built-ins still work on
 standalone definitions. Custom robotics types require the document's model map.
 
-`BehaviorTreeNode` shows only the name and a category icon in a compact row with a thin neutral border matching the connector color. Icons are split arrows for Control, lightning
+`BehaviorTreeNode` uses a two-row icon column: category above, execution status below,
+with the name spanning both rows beside it. Expandable branches show a small bottom-right
+plus when collapsed and minus when expanded. Subtle dividers separate the cells. Icons are split arrows for Control, lightning
 bolt for Action, checked diamond for Condition, wrapping arrow for Decorator, and
 Pictogrammers' `mdi-sitemap-outline` for SubTree. Unknown is omitted from the legend;
 unrecognized XML nodes retain a neutral question-mark fallback and inspector metadata.
@@ -186,13 +195,16 @@ category, exact status, and XML attributes remain in the inspector.
 Node fills indicate recorded status on dark surfaces: yellow-tinted RUNNING,
 green-tinted SUCCESS, red-tinted FAILURE, violet-gray IDLE, background-colored
 SKIPPED, and ordinary surface-colored Not observed. Status symbols supplement
-these fills; hover also shows the exact status. RUNNING has a yellow inner ring,
-selection a separate white outer outline, and keyboard focus a dashed yellow outline.
-The legend below the graph shows the same category icons, status fills and symbols,
-yellow running path, and selection outline. Handles remain invisible and non-connectable.
+these fills; hover also shows the exact status. RUNNING, SUCCESS, and FAILURE have
+yellow, green, and red inner rings. Success and failure use stronger tinted fills;
+selection has a separate white outer outline, and keyboard focus a dashed yellow outline.
+The legends inside the graph show the same category icons and recorded-status fills
+and symbols. Handles remain invisible and non-connectable.
 
-Click any node to open `NodeInspector`; Enter also inspects ordinary nodes.
-For SubTrees and Controls with children, Enter, double-click, and plus/minus toggle contents in the current graph.
+Click any node or press Enter on it to open `NodeInspector`.
+Press Enter again on the same node or Escape within the viewer to close it. Escape
+from inside the inspector returns focus to the inspected node.
+For SubTrees and Controls with children, Space and double-click toggle contents in the current graph.
 Use **Open subtree separately** in the inspector when a dedicated view is wanted. All XML attribute values are displayed as text,
 including expressions and blackboard references. Close or click the canvas to
 clear inspection. Navigation resets selection. The scrollable inspector appears
@@ -449,17 +461,17 @@ subtrees for the complete active route through nested definitions. Both follow p
 and backward seeks. If no node is RUNNING, the path filter shows an empty message;
 the overlay controls stay available.
 
-Double-click an individual SubTree (or use its plus/minus button) to toggle it
+Double-click an individual SubTree (or focus it and press Space) to toggle it
 without leaving the current tree. Nested subtrees start collapsed under the default
 mode; expand them individually. Manual choices override the selected bulk mode and
 the status panel shows **Subtrees: Custom**. Choosing any bulk mode clears those overrides.
 Closing an ancestor hides all its descendants but remembers nested choices for
 reopening. Running path only remains an independent filter. Playback and UID status
-mapping continue unchanged; unresolved or empty references have a disabled toggle.
+mapping continue unchanged; unresolved or empty references cannot expand.
 Single-click inspects any node; the inspector retains **Open subtree separately**
 for explicit breadcrumb navigation.
 
-Controls with execution children use the same double-click, plus/minus, and Enter
+Controls with execution children use the same double-click and Space
 actions. They hide descendants by default at SUCCESS, unless a descendant is still
 recorded RUNNING. Other statuses leave the branch open. Manual choices take priority
 through playback and seeks, survive closing an ancestor, and are independent of the

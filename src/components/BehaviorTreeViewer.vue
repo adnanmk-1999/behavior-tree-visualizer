@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, toRef, watch } from 'vue'
+import { computed, nextTick, ref, toRef, useId, watch } from 'vue'
 import { VueFlow, useVueFlow, type NodeMouseEvent } from '@vue-flow/core'
 import type {
   BehaviorTreeDefinition,
@@ -7,7 +7,6 @@ import type {
   NodeCategoryMap,
 } from '@/types/behaviorTree'
 import BehaviorTreeNodeView from '@/components/BehaviorTreeNode.vue'
-import BehaviorTreeLegend from '@/components/BehaviorTreeLegend.vue'
 import NodeInspector from '@/components/NodeInspector.vue'
 import AppIcon from '@/components/AppIcon.vue'
 import ViewportOverlay from '@/components/ViewportOverlay.vue'
@@ -43,6 +42,9 @@ const {
   removeSelectedNodes,
 } = useVueFlow()
 const selectedNodeId = ref<string | null>(null)
+const canvas = ref<HTMLElement | null>(null)
+const focusedNodeId = ref<string | null>(null)
+const keyboardHelpId = useId()
 const {
   graph,
   runningPathOnly,
@@ -92,6 +94,22 @@ const selectedNode = computed(
   () => graph.value.nodes.find((node) => node.id === selectedNodeId.value)?.data,
 )
 
+const keyboardNodeId = computed(
+  () =>
+    graph.value.nodes.find((node) => node.id === focusedNodeId.value)?.id ??
+    graph.value.nodes[0]?.id,
+)
+const displayNodes = computed(() =>
+  graph.value.nodes.map((node) => ({
+    ...node,
+    domAttributes: {
+      ...node.domAttributes,
+      tabindex: node.id === keyboardNodeId.value ? 0 : -1,
+      'aria-describedby': keyboardHelpId,
+    },
+  })),
+)
+
 const displayEdges = computed(() =>
   graph.value.edges.map((edge) => ({
     ...edge,
@@ -104,6 +122,16 @@ const displayEdges = computed(() =>
 function closeInspector() {
   selectedNodeId.value = null
   removeSelectedNodes(getSelectedNodes.value)
+}
+
+function dismissInspector(event: KeyboardEvent) {
+  if (event.defaultPrevented || selectedNodeId.value === null) return
+  const id = selectedNodeId.value
+  const returnFocus = event.target instanceof Element && event.target.closest('.node-inspector')
+  event.preventDefault()
+  event.stopPropagation()
+  closeInspector()
+  if (returnFocus) void nextTick(() => focusNode(id))
 }
 
 function inspectNode(id: string) {
@@ -137,9 +165,10 @@ function readableView() {
 
 function onGraphFocus(event: FocusEvent) {
   if (!(event.target instanceof Element) || !(event.currentTarget instanceof Element)) return
-  if (!event.target.matches(':focus-visible')) return
   const node = event.target.closest('.vue-flow__node')
   if (!node) return
+  focusedNodeId.value = node.getAttribute('data-id')
+  if (!event.target.matches(':focus-visible')) return
   const bounds = node.getBoundingClientRect()
   const container = event.currentTarget.getBoundingClientRect()
   if (
@@ -156,10 +185,25 @@ function onGraphFocus(event: FocusEvent) {
   }
 }
 
-function activateNode(id: string) {
-  const data = graph.value.nodes.find((node) => node.id === id)?.data
-  if (expandableBranchIds.value.has(id)) toggleInlineBranch(id)
-  else if (data) inspectNode(id)
+function focusNode(id: string | undefined) {
+  if (id === undefined) return
+  canvas.value
+    ?.querySelector<HTMLElement>(`.vue-flow__node[data-id="${CSS.escape(id)}"]`)
+    ?.focus({ preventScroll: true })
+}
+
+function navigateNode(id: string, key: string) {
+  const { nodes, edges } = graph.value
+  const parents = new Map(edges.map((edge) => [edge.target, edge.source]))
+  if (key === 'ArrowUp') {
+    focusNode(parents.get(id))
+  } else if (key === 'ArrowDown') {
+    focusNode(edges.find((edge) => edge.source === id)?.target)
+  } else {
+    const siblings = nodes.filter((node) => parents.get(node.id) === parents.get(id))
+    const index = siblings.findIndex((node) => node.id === id)
+    focusNode(siblings[index + (key === 'ArrowRight' ? 1 : -1)]?.id)
+  }
 }
 
 function onNodeClick({ node }: NodeMouseEvent) {
@@ -176,34 +220,82 @@ function onNodeDoubleClick({ node }: NodeMouseEvent) {
   toggleInlineBranch(node.id)
 }
 
+function onPaneClick() {
+  closeInspector()
+  canvas.value?.focus({ preventScroll: true })
+}
+
 function onGraphKeydown(event: KeyboardEvent) {
-  if (event.key !== 'Enter' || event.repeat || !(event.target instanceof Element)) return
+  if (
+    event.defaultPrevented ||
+    event.isComposing ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    !(event.target instanceof Element)
+  )
+    return
   const node = event.target.closest('.vue-flow__node')
-  if (node) {
-    event.preventDefault()
-    activateNode(node.getAttribute('data-id') ?? '')
+  if (!node && event.target !== canvas.value) return
+  const id = node?.getAttribute('data-id') ?? keyboardNodeId.value
+  const key = event.key
+  const panOffsets: Record<string, { x: number; y: number }> = {
+    w: { x: 0, y: 64 },
+    a: { x: 64, y: 0 },
+    s: { x: 0, y: -64 },
+    d: { x: -64, y: 0 },
+  }
+  const pan = panOffsets[key.toLowerCase()]
+  const arrow = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)
+  if (!arrow && !pan && !['Enter', ' ', '+', '=', '-'].includes(key)) return
+  event.preventDefault()
+  event.stopPropagation()
+  if (arrow && id !== undefined) {
+    navigateNode(id, key)
+  } else if (key === 'Enter' && id !== undefined && !event.repeat) {
+    if (selectedNodeId.value === id) closeInspector()
+    else inspectNode(id)
+  } else if (key === ' ' && id !== undefined && !event.repeat) {
+    toggleInlineBranch(id)
+  } else if (pan) {
+    void setViewport({
+      ...viewport.value,
+      x: viewport.value.x + pan.x,
+      y: viewport.value.y + pan.y,
+    })
+  } else if (key === '+' || key === '=') {
+    void zoomIn()
+  } else if (key === '-') {
+    void zoomOut()
   }
 }
 
 onNodesInitialized(applyPendingView)
-watch(
-  graph,
-  async (_, __, onCleanup) => {
-    if (selectedNodeId.value && !graph.value.nodes.some((node) => node.id === selectedNodeId.value))
-      closeInspector()
-    let cancelled = false
-    onCleanup(() => {
-      cancelled = true
-    })
-    await nextTick()
-    if (!cancelled) await applyPendingView()
-  },
-  { flush: 'post' },
-)
+watch(graph, async (_, __, onCleanup) => {
+  const restoreFocus =
+    document.activeElement?.matches('.vue-flow__node') &&
+    canvas.value?.contains(document.activeElement) &&
+    focusedNodeId.value !== null &&
+    !graph.value.nodes.some((node) => node.id === focusedNodeId.value)
+  if (selectedNodeId.value && !graph.value.nodes.some((node) => node.id === selectedNodeId.value))
+    closeInspector()
+  let cancelled = false
+  onCleanup(() => {
+    cancelled = true
+  })
+  await nextTick()
+  if (!cancelled) {
+    if (restoreFocus) {
+      if (keyboardNodeId.value !== undefined) focusNode(keyboardNodeId.value)
+      else canvas.value?.focus({ preventScroll: true })
+    }
+    await applyPendingView()
+  }
+})
 </script>
 
 <template>
-  <div class="bt-viewer bt-theme">
+  <div class="bt-viewer bt-theme" @keydown.esc.capture="dismissInspector">
     <p v-if="graph.error" class="notice notice-error" role="alert">{{ graph.error }}</p>
     <template v-else>
       <ul v-if="graph.warnings.length" class="notice" role="status">
@@ -212,7 +304,22 @@ watch(
       <section class="graph-panel" :aria-label="`${tree.ID} behavior tree diagram`">
         <div class="viewer-workspace">
           <div class="graph-container">
-            <div class="graph-canvas" @keydown="onGraphKeydown" @focusin="onGraphFocus">
+            <div
+              ref="canvas"
+              class="graph-canvas"
+              tabindex="-1"
+              role="group"
+              aria-label="Behavior tree canvas"
+              :aria-describedby="keyboardHelpId"
+              @keydown.capture="onGraphKeydown"
+              @focusin="onGraphFocus"
+            >
+              <span :id="keyboardHelpId" class="sr-only">
+                Arrow keys navigate nodes: up to parent, down to first child, left and right between
+                siblings. Enter toggles the node inspector; Escape closes it. Space expands or
+                collapses its branch. W, A, S, D pan the view; plus and minus zoom. Tab leaves the
+                graph for other controls.
+              </span>
               <div v-if="!graph.nodes.length" class="empty-view" role="status">
                 <AppIcon name="route" />
                 <strong>{{
@@ -227,20 +334,22 @@ watch(
                 </p>
               </div>
               <VueFlow
-                :nodes="graph.nodes"
+                :nodes="displayNodes"
                 :edges="displayEdges"
                 :nodes-draggable="false"
                 :nodes-connectable="false"
                 :edges-updatable="false"
+                :edges-focusable="false"
                 :connect-on-click="false"
                 :delete-key-code="null"
+                :pan-activation-key-code="null"
                 :elements-selectable="true"
                 :min-zoom="0.05"
                 :max-zoom="2"
                 :zoom-on-double-click="false"
                 @node-click="onNodeClick"
                 @node-double-click="onNodeDoubleClick"
-                @pane-click="closeInspector"
+                @pane-click="onPaneClick"
               >
                 <template #node-behavior-tree="nodeProps">
                   <BehaviorTreeNodeView
@@ -249,7 +358,6 @@ watch(
                     :status="getNodeStatus(props.statuses, nodeProps.data._uid)"
                     :expanded="expandedBranchIds.has(nodeProps.id)"
                     :expandable="expandableBranchIds.has(nodeProps.id)"
-                    @toggle-branch="toggleInlineBranch(nodeProps.id)"
                   />
                 </template>
               </VueFlow>
@@ -272,23 +380,6 @@ watch(
                 @set-subtrees="setSubtrees"
               />
             </div>
-            <div class="graph-footer">
-              <span class="canvas-hint"
-                >Drag to pan <span aria-hidden="true">·</span> Scroll to zoom</span
-              >
-              <details class="graph-help">
-                <summary><AppIcon name="info" /> How to explore</summary>
-                <p>
-                  Click any node to inspect it. Double-click a SubTree or a Control with children to
-                  expand or collapse its branch, use its plus/minus button, or focus it and press
-                  Enter. Successful Controls collapse automatically unless they lead to a RUNNING
-                  node; manual choices take priority. The inspector can open a subtree separately.
-                  Expanding or collapsing keeps your zoom and the toggled node in place. Choosing a
-                  Subtrees mode resets only subtree toggles; Running path only still filters what is
-                  visible. Fit tree shows the overview; Readable view zooms in at the root.
-                </p>
-              </details>
-            </div>
           </div>
           <NodeInspector
             v-if="selectedNode"
@@ -300,7 +391,6 @@ watch(
           />
         </div>
       </section>
-      <BehaviorTreeLegend />
     </template>
   </div>
 </template>
@@ -377,54 +467,6 @@ watch(
   border-left: 1px solid var(--bt-border);
   border-radius: 0 0 4px 0;
 }
-.graph-footer {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.25rem 1rem;
-  min-height: 32px;
-  padding: 0.375rem 0.875rem;
-  border-top: 1px solid var(--bt-border);
-  border-radius: 0 0 4px 4px;
-  color: var(--bt-text-secondary);
-  background: var(--bt-surface);
-  font-size: 0.75rem;
-}
-.canvas-hint > span {
-  padding-inline: 0.375rem;
-}
-.canvas-hint {
-  margin-right: auto;
-}
-.graph-help summary {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-height: 24px;
-  list-style: none;
-  color: var(--bt-primary);
-  border-radius: 4px;
-}
-.graph-help summary::-webkit-details-marker {
-  display: none;
-}
-.graph-help summary .app-icon {
-  width: 16px;
-  height: 16px;
-}
-.graph-help summary:hover {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.graph-help[open] {
-  width: 100%;
-}
-.graph-help p {
-  max-width: 80ch;
-  margin: 0.25rem 0 0.5rem;
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
 :deep(.vue-flow__node:focus-visible) {
   outline: 3px dashed var(--bt-primary);
   outline-offset: 4px;
@@ -466,14 +508,6 @@ watch(
     border-left: 0;
     border-top: 1px solid var(--bt-border);
     border-radius: 0 0 4px 4px;
-  }
-}
-@container bt-viewer (max-width: 600px) {
-  .canvas-hint {
-    display: none;
-  }
-  .graph-help {
-    margin-left: auto;
   }
 }
 </style>

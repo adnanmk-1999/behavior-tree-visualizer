@@ -7,6 +7,10 @@
   --bt-overlay-button-surface: rgb(var(--v-theme-blue-grey-darken-1, 84, 110, 122));
   --bt-tooltip-surface: rgb(var(--v-theme-surface-variant, 199, 199, 199));
   --bt-tooltip-text: rgb(var(--v-theme-on-surface-variant, 0, 0, 0));
+  --bt-help-background: rgba(var(--v-theme-tooltip, 32, 32, 32), 0.94);
+  --bt-help-border: rgba(var(--v-border-color, 255, 255, 255), 0.18);
+  --bt-help-text: rgb(var(--v-theme-on-tooltip, 224, 224, 224));
+  --bt-category-surface: rgba(var(--v-theme-tooltip, 32, 32, 32), 0.82);
   --bt-on-primary: rgb(var(--v-theme-on-primary, 0, 0, 0));
   --bt-secondary: rgb(var(--v-theme-secondary, 120, 117, 134));
   --bt-error: rgb(var(--v-theme-error, 209, 21, 22));
