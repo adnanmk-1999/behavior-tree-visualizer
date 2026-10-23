@@ -8,6 +8,7 @@ import {
 } from '../utils/expandBehaviorTreeFlow.ts'
 import { getRunningPathEdges } from '../utils/getRunningPathEdges.ts'
 import { layoutTree } from '../utils/layoutTree.ts'
+import { getSubtreeBoundaries } from '../utils/getSubtreeBoundaries.ts'
 import type { BehaviorTreeFlow } from '@/utils/behaviorTreeToFlow'
 
 export function useBehaviorTreeView(
@@ -117,6 +118,9 @@ export function useBehaviorTreeView(
     }
   })
   const runningPathEdges = computed(() => getRunningPathEdges(expanded.value, statuses.value))
+  const subtreeBoundaries = computed(() =>
+    getSubtreeBoundaries(graph.value, expanded.value.branchAncestors, expanded.value.nodes),
+  )
 
   function toggleBranch(id: string) {
     const node = graph.value.nodes.find((node) => node.id === id)
@@ -146,6 +150,7 @@ export function useBehaviorTreeView(
     subtrees,
     graph,
     runningPathEdges,
+    subtreeBoundaries,
     expandedBranchIds,
     expandableBranchIds,
     hasSubtreeOverrides,

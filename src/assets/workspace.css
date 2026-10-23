@@ -20,6 +20,9 @@
   --bt-text: rgb(var(--v-theme-on-surface, 255, 255, 255));
   --bt-text-secondary: rgba(var(--v-theme-on-surface, 255, 255, 255), 0.7);
   --bt-border: rgba(var(--v-border-color, 255, 255, 255), var(--v-border-opacity, 0.12));
+  --bt-subtree-tone-0: rgb(var(--v-theme-subtree-blue, 100, 140, 235));
+  --bt-subtree-tone-1: rgb(var(--v-theme-subtree-plum, 200, 130, 190));
+  --bt-subtree-tone-2: rgb(var(--v-theme-subtree-cyan, 80, 185, 190));
   --bt-border-hover: color-mix(in srgb, var(--bt-text) 40%, transparent);
   --bt-surface-hover: color-mix(in srgb, var(--bt-text) 8%, var(--bt-surface));
   --bt-primary-soft: color-mix(in srgb, var(--bt-primary) 12%, var(--bt-surface));

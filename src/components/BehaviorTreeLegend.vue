@@ -40,8 +40,7 @@ const categories = NODE_CATEGORIES.filter((category) => category !== 'Unknown')
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 16px;
-  align-self: flex-start;
-  width: max-content;
+  width: 100%;
   min-width: 160px;
   max-width: 100%;
   min-height: 40px;

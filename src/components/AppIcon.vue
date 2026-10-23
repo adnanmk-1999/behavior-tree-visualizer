@@ -22,6 +22,7 @@ const paths = {
   down: 'm5 9 7 7 7-7',
   'collapse-tree': 'M8 4H4v4M16 4h4v4M4 16v4h4M20 16v4h-4M9 9h6v6H9Z',
   'running-tree': 'M5 3v18M5 7h7M5 17h7M15 3l6 4-6 4ZM15 14h6v6h-6Z',
+  layers: 'm3 7 9-4 9 4-9 4ZM3 12l9 4 9-4M3 17l9 4 9-4',
   plus: 'M12 5v14M5 12h14',
   minus: 'M5 12h14',
   fit: 'M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5M8 8h8v8H8z',

@@ -13,8 +13,8 @@ recorded playback immediately above the graph, and controls anchored inside the
 plain canvas. A single legend combines Category on the left and Status on the right
 near the top left. The collapsible Tree Details panel above it shows node/connection
 counts, zoom, and visibility state. Bottom-right icon groups provide zoom and view actions;
-all eight blue-grey viewport buttons stay visible side by side in one horizontal row,
-including Running path only and the three subtree expansion modes.
+all nine blue-grey viewport buttons stay visible side by side in one horizontal row,
+including Running path only, the three subtree expansion modes, and Subtree boundaries.
 Click a node to open the inspector on the right (below the
 graph on smaller screens). Hover or focus the info icon at the top right of the
 canvas for keyboard and mouse shortcuts; tapping also
@@ -61,9 +61,11 @@ Inherited Vuetify variables use RGB channel lists, such as
 `--v-theme-primary: 255, 237, 0`. Supported roles are background, surface, primary,
 on-primary, secondary, error, warning, info, success, on-surface, plus
 `--v-border-color` and `--v-border-opacity`. Defaults match the KopsiHub dark theme.
+Optional `subtree-blue`, `subtree-plum`, and `subtree-cyan` roles set boundary accents.
 For direct `--bt-*` overrides, set the variable on the component's `.bt-theme` root;
 the defaults are defined there, not on the document root. Playback selects and node hover descriptions remain native. Overlay buttons have
-scoped light-grey hover/focus tooltips with dark text; there are no custom portals, dialogs, or file pickers.
+scoped light-grey hover/focus tooltips with dark text. Tooltips sit above their buttons,
+centered where space permits and shifted inward at canvas edges. There are no custom portals, dialogs, or file pickers.
 The info button uses a compact dark tooltip in the browser's native popover layer,
 so scroll containers do not clip it. Its scoped `--bt-help-*` tokens inherit optional
 `tooltip`/`on-tooltip` theme roles and the host border color, with KopsiHub fallbacks.
@@ -147,8 +149,11 @@ resets history to RobotTree. Breadcrumbs truncate the stack; clicking the curren
 breadcrumb leaves the graph unchanged. Repeated IDs include their full instance
 path in breadcrumb labels, and the current instance path is shown above the graph.
 
-Single-click any node, including a SubTree, to inspect it. Double-click a SubTree or Control with children
-(or focus it and press Space) to expand or collapse that exact instance inline.
+Single-click any node, including a SubTree, to inspect it. Expandable nodes wait
+500ms before opening the inspector so a double-click can cancel inspection;
+leaf clicks and Enter respond immediately. Double-click a SubTree or Control with children
+(or focus it and press Space) to expand or collapse that exact instance inline without opening
+the inspector. Escape, clicking the canvas, or toggling a branch cancels pending inspection.
 Arrow Up/Down moves focus to a parent/first child; Left/Right moves between siblings.
 Enter toggles the focused node's inspector; Escape closes it. WASD pans the view and +/− zooms while the canvas or
 a node has focus. Tab enters or leaves the graph instead of visiting every node.
@@ -183,7 +188,9 @@ standalone definitions. Custom robotics types require the document's model map.
 
 `BehaviorTreeNode` uses a two-row icon column: category above, execution status below,
 with the name spanning both rows beside it. Expandable branches show a small bottom-right
-plus when collapsed and minus when expanded. Subtle dividers separate the cells. Icons are split arrows for Control, lightning
+plus when collapsed and minus when expanded. Click that button to toggle the branch without
+opening the inspector; double-clicking the node or pressing Space still works.
+Subtle dividers separate the cells. Icons are split arrows for Control, lightning
 bolt for Action, checked diamond for Condition, wrapping arrow for Decorator, and
 Pictogrammers' `mdi-sitemap-outline` for SubTree. Unknown is omitted from the legend;
 unrecognized XML nodes retain a neutral question-mark fallback and inspector metadata.
@@ -455,6 +462,22 @@ visibility, Readable view, and Fit tree:
   Choose **Collapse subtrees** to hide their contents again.
 - **Expand running subtrees** expands a subtree when its reference or any descendant
   has a recorded RUNNING status. Other subtree contents remain collapsed.
+- **Subtree boundaries** (layers icon, on by default) shows faint outlines and a
+  subtle background tint around visible expanded SubTree contents. Toggle it with
+  a click or Enter/Space while focused; it leaves node positions, zoom, and pan unchanged.
+
+Boundaries include the SubTree reference node and its visible descendants, following
+each depth row to keep neighboring branches outside. Corners are rounded, with smaller
+rounding on short steps. Boundary steps leave 12px of clearance around connector bends.
+There are no extra boundary labels;
+the node name identifies the SubTree, and the inspector retains its UID. Blue, plum,
+and cyan accents cycle between consecutive SubTree siblings and skip the enclosing
+SubTree's color. Colors stay stable through expansion, filtering, and playback;
+the finite palette repeats, so node names and inspector details identify instances.
+Fills mix the accent with the opaque canvas color, preventing nested backgrounds
+from getting progressively brighter. Boundaries pan and zoom with the
+graph and let pointer actions pass through. Collapsing or filtering contents
+updates their boundary; an empty filtered graph has none.
 
 Contents are hidden by default. Combine Running path only with Expand running
 subtrees for the complete active route through nested definitions. Both follow playback

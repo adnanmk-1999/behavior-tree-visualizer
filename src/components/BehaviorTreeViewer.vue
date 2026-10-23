@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, toRef, useId, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, toRef, useId, watch } from 'vue'
 import { VueFlow, useVueFlow, type NodeMouseEvent } from '@vue-flow/core'
 import type {
   BehaviorTreeDefinition,
@@ -42,14 +42,18 @@ const {
   removeSelectedNodes,
 } = useVueFlow()
 const selectedNodeId = ref<string | null>(null)
+let inspectionTimer: ReturnType<typeof setTimeout> | undefined
+let inspectorBeforeClick: string | null = null
 const canvas = ref<HTMLElement | null>(null)
 const focusedNodeId = ref<string | null>(null)
 const keyboardHelpId = useId()
+const showSubtreeBoundaries = ref(true)
 const {
   graph,
   runningPathOnly,
   subtrees,
   runningPathEdges,
+  subtreeBoundaries,
   expandedBranchIds,
   expandableBranchIds,
   hasSubtreeOverrides,
@@ -77,6 +81,7 @@ function applyPendingView() {
 }
 
 async function changeView(change: () => void) {
+  cancelPendingInspection()
   pendingView = true
   change()
   await nextTick()
@@ -119,12 +124,19 @@ const displayEdges = computed(() =>
   })),
 )
 
+function cancelPendingInspection() {
+  clearTimeout(inspectionTimer)
+  inspectionTimer = undefined
+}
+
 function closeInspector() {
+  cancelPendingInspection()
   selectedNodeId.value = null
   removeSelectedNodes(getSelectedNodes.value)
 }
 
 function dismissInspector(event: KeyboardEvent) {
+  cancelPendingInspection()
   if (event.defaultPrevented || selectedNodeId.value === null) return
   const id = selectedNodeId.value
   const returnFocus = event.target instanceof Element && event.target.closest('.node-inspector')
@@ -135,6 +147,8 @@ function dismissInspector(event: KeyboardEvent) {
 }
 
 function inspectNode(id: string) {
+  cancelPendingInspection()
+  if (!graph.value.nodes.some((node) => node.id === id)) return
   const node = findNode(id)
   if (!node) return
   removeSelectedNodes(getSelectedNodes.value)
@@ -206,17 +220,33 @@ function navigateNode(id: string, key: string) {
   }
 }
 
-function onNodeClick({ node }: NodeMouseEvent) {
-  inspectNode(node.id)
+function onNodeClick({ event, node }: NodeMouseEvent) {
+  cancelPendingInspection()
+  if (event.detail > 1) return
+  inspectorBeforeClick = selectedNodeId.value
+  if (event.detail === 0 || !expandableBranchIds.value.has(node.id)) {
+    inspectNode(node.id)
+    return
+  }
+  // A double-click must get a chance to cancel inspection before the sidebar changes layout.
+  inspectionTimer = setTimeout(() => inspectNode(node.id), 500)
 }
 
 function toggleInlineBranch(id: string) {
+  cancelPendingInspection()
   if (!expandableBranchIds.value.has(id)) return
   pendingView = false
   toggleBranch(id)
 }
 
 function onNodeDoubleClick({ node }: NodeMouseEvent) {
+  cancelPendingInspection()
+  if (!expandableBranchIds.value.has(node.id)) return
+  // Restore the previous inspector if a slower native double-click outlasted the delay.
+  if (selectedNodeId.value === node.id && inspectorBeforeClick !== node.id) {
+    closeInspector()
+    if (inspectorBeforeClick !== null) inspectNode(inspectorBeforeClick)
+  }
   toggleInlineBranch(node.id)
 }
 
@@ -239,6 +269,7 @@ function onGraphKeydown(event: KeyboardEvent) {
   if (!node && event.target !== canvas.value) return
   const id = node?.getAttribute('data-id') ?? keyboardNodeId.value
   const key = event.key
+  if (event.target.closest('button') && (key === 'Enter' || key === ' ')) return
   const panOffsets: Record<string, { x: number; y: number }> = {
     w: { x: 0, y: 64 },
     a: { x: 64, y: 0 },
@@ -248,6 +279,7 @@ function onGraphKeydown(event: KeyboardEvent) {
   const pan = panOffsets[key.toLowerCase()]
   const arrow = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)
   if (!arrow && !pan && !['Enter', ' ', '+', '=', '-'].includes(key)) return
+  cancelPendingInspection()
   event.preventDefault()
   event.stopPropagation()
   if (arrow && id !== undefined) {
@@ -271,6 +303,8 @@ function onGraphKeydown(event: KeyboardEvent) {
 }
 
 onNodesInitialized(applyPendingView)
+onBeforeUnmount(cancelPendingInspection)
+watch(() => props.tree, cancelPendingInspection)
 watch(graph, async (_, __, onCleanup) => {
   const restoreFocus =
     document.activeElement?.matches('.vue-flow__node') &&
@@ -351,6 +385,18 @@ watch(graph, async (_, __, onCleanup) => {
                 @node-double-click="onNodeDoubleClick"
                 @pane-click="onPaneClick"
               >
+                <template #zoom-pane>
+                  <svg v-if="showSubtreeBoundaries" class="subtree-boundaries" aria-hidden="true">
+                    <g
+                      v-for="boundary in subtreeBoundaries"
+                      :key="boundary.id"
+                      :data-subtree-id="boundary.id"
+                      :style="{ '--bt-subtree-accent': `var(--bt-subtree-tone-${boundary.tone})` }"
+                    >
+                      <path class="subtree-boundary" :d="boundary.path" />
+                    </g>
+                  </svg>
+                </template>
                 <template #node-behavior-tree="nodeProps">
                   <BehaviorTreeNodeView
                     :data="nodeProps.data"
@@ -358,6 +404,7 @@ watch(graph, async (_, __, onCleanup) => {
                     :status="getNodeStatus(props.statuses, nodeProps.data._uid)"
                     :expanded="expandedBranchIds.has(nodeProps.id)"
                     :expandable="expandableBranchIds.has(nodeProps.id)"
+                    @toggle-branch="toggleInlineBranch(nodeProps.id)"
                   />
                 </template>
               </VueFlow>
@@ -368,6 +415,7 @@ watch(graph, async (_, __, onCleanup) => {
                 :running-path-only="runningPathOnly"
                 :subtrees="subtrees"
                 :has-subtree-overrides="hasSubtreeOverrides"
+                :show-subtree-boundaries="showSubtreeBoundaries"
                 @zoom-in="zoomIn()"
                 @zoom-out="zoomOut()"
                 @readable-view="readableView()"
@@ -378,6 +426,7 @@ watch(graph, async (_, __, onCleanup) => {
                   })
                 "
                 @set-subtrees="setSubtrees"
+                @toggle-subtree-boundaries="showSubtreeBoundaries = !showSubtreeBoundaries"
               />
             </div>
           </div>
@@ -432,6 +481,22 @@ watch(graph, async (_, __, onCleanup) => {
   flex: 1;
   min-height: 200px;
   background-color: var(--bt-background);
+}
+.subtree-boundaries {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  z-index: -1;
+  pointer-events: none;
+}
+.subtree-boundary {
+  fill: color-mix(in srgb, var(--bt-subtree-accent) 14%, var(--bt-background));
+  stroke: color-mix(in srgb, var(--bt-subtree-accent) 45%, var(--bt-background));
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
 }
 .empty-view {
   position: absolute;

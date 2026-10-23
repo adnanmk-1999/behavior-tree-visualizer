@@ -12,6 +12,7 @@ defineProps<{
   runningPathOnly: boolean
   subtrees: SubtreeVisibility
   hasSubtreeOverrides: boolean
+  showSubtreeBoundaries: boolean
 }>()
 defineEmits<{
   zoomIn: []
@@ -20,10 +21,13 @@ defineEmits<{
   fitTree: []
   toggleRunningPath: []
   setSubtrees: [mode: SubtreeVisibility]
+  toggleSubtreeBoundaries: []
 }>()
 
 const id = useId()
-const statusExpanded = ref(true)
+const overlay = ref<HTMLElement | null>(null)
+let tooltipResizeObserver: ResizeObserver | undefined
+const statusExpanded = ref(false)
 const tooltipsDismissed = ref(false)
 const subtreeModes = [
   { value: 'hidden', label: 'Collapse subtrees', status: 'Collapsed', icon: 'collapse-tree' },
@@ -39,12 +43,30 @@ const subtreeModes = [
 function dismissTooltips(event: KeyboardEvent) {
   if (event.key === 'Escape') tooltipsDismissed.value = true
 }
-onMounted(() => document.addEventListener('keydown', dismissTooltips))
-onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
+function positionTooltips() {
+  if (!overlay.value) return
+  const bounds = overlay.value.getBoundingClientRect()
+  for (const button of overlay.value.querySelectorAll<HTMLElement>('.overlay-button')) {
+    const rect = button.getBoundingClientRect()
+    const center = rect.left + rect.width / 2
+    button.style.setProperty('--tooltip-left-limit', `${bounds.left + 8 - center}px`)
+    button.style.setProperty('--tooltip-right-limit', `${bounds.right - 8 - center}px`)
+  }
+}
+onMounted(() => {
+  document.addEventListener('keydown', dismissTooltips)
+  tooltipResizeObserver = new ResizeObserver(positionTooltips)
+  if (overlay.value) tooltipResizeObserver.observe(overlay.value)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', dismissTooltips)
+  tooltipResizeObserver?.disconnect()
+})
 </script>
 
 <template>
   <div
+    ref="overlay"
     class="viewport-overlay"
     :data-tooltips-dismissed="tooltipsDismissed || undefined"
     @keydown.esc.stop.prevent="tooltipsDismissed = true"
@@ -141,6 +163,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
         >
           <AppIcon :name="mode.icon" />
         </button>
+        <button
+          class="overlay-button"
+          type="button"
+          aria-label="Toggle Subtree Highlighting"
+          :aria-pressed="showSubtreeBoundaries"
+          @click="$emit('toggleSubtreeBoundaries')"
+        >
+          <AppIcon name="layers" />
+        </button>
       </div>
 
       <div class="button-group" role="group" aria-label="Tree view actions">
@@ -190,7 +221,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
   z-index: 1;
 }
 .viewport-left {
-  width: min(280px, calc(100% - 16px));
+  width: max-content;
+  max-width: min(280px, calc(100% - 16px));
   top: 8px;
   left: 8px;
   max-height: calc(100% - 60px);
@@ -199,7 +231,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
   gap: 8px;
 }
 .viewport-status {
-  width: min(200px, 100%);
+  width: 100%;
   min-height: 36px;
   flex-shrink: 0;
   display: flex;
@@ -313,9 +345,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
   content: attr(aria-label);
   position: absolute;
   z-index: 1;
-  left: calc(100% + 10px);
-  top: 50%;
-  transform: translateY(-50%);
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(
+    clamp(var(--tooltip-left-limit), -50%, calc(var(--tooltip-right-limit) - 100%))
+  );
   width: max-content;
   max-width: min(240px, calc(100cqw - 72px));
   padding: 5px 16px;
@@ -332,11 +366,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
 .overlay-button:focus-visible::after {
   visibility: visible;
 }
-.visibility-controls .overlay-button:nth-child(n + 3)::after,
-.button-group:last-child .overlay-button::after {
-  left: auto;
-  right: calc(100% + 10px);
-}
 @media (hover: hover) {
   .overlay-button:hover::after {
     visibility: visible;
@@ -345,25 +374,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
 [data-tooltips-dismissed] .overlay-button::after {
   visibility: hidden;
 }
-@container bt-canvas (max-width: 600px) {
-  .overlay-button {
-    position: static;
-  }
-  .overlay-button::after,
-  .visibility-controls .overlay-button:nth-child(n + 3)::after,
-  .button-group:last-child .overlay-button::after {
-    top: auto;
-    bottom: calc(100% + 10px);
-    left: auto;
-    right: 0;
-    transform: none;
-  }
-  .button-group:first-child .overlay-button::after {
-    left: 0;
-    right: auto;
-  }
-}
-@container bt-canvas (max-width: 360px) {
+@container bt-canvas (max-width: 400px) {
   .viewport-actions {
     gap: 4px;
   }
@@ -374,8 +385,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', dismissTooltips))
     padding-left: 4px;
   }
   .overlay-button {
-    flex-basis: 32px;
-    width: 32px;
+    flex-basis: 28px;
+    width: 28px;
   }
 }
 </style>

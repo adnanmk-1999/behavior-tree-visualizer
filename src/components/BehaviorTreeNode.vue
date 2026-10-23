@@ -21,7 +21,7 @@ defineEmits<{ toggleBranch: [] }>()
 const description = computed(() => {
   const { data, status, expandable, expanded } = props
   const branch = expandable
-    ? `\n${expanded ? 'Expanded' : 'Collapsed'} · Double-click or press Space to toggle`
+    ? `\n${expanded ? 'Expanded' : 'Collapsed'} · Click +/−, double-click or press Space to toggle`
     : ''
   return `${data.label}\n${data.category} · ${data.registeredType}\nUID ${data.idSource === 'uid' ? data._uid : 'not provided'}\n${status === 'UNOBSERVED' ? 'Not observed' : status}${branch}`
 })
@@ -44,7 +44,20 @@ const description = computed(() => {
       <span class="sr-only">{{ status === 'UNOBSERVED' ? 'Not observed' : status }}</span>
     </span>
     <strong class="node-name">{{ data.label }}</strong>
-    <AppIcon v-if="expandable" class="branch-indicator" :name="expanded ? 'minus' : 'plus'" />
+    <button
+      v-if="expandable"
+      class="branch-indicator nodrag nopan"
+      type="button"
+      tabindex="-1"
+      :aria-label="`${expanded ? 'Collapse' : 'Expand'} ${data.label}`"
+      :aria-expanded="expanded"
+      :title="`${expanded ? 'Collapse' : 'Expand'} branch`"
+      @click.stop="$emit('toggleBranch')"
+      @dblclick.stop
+      @keydown.stop
+    >
+      <AppIcon :name="expanded ? 'minus' : 'plus'" />
+    </button>
     <Handle type="source" :position="Position.Bottom" :connectable="false" />
   </div>
 </template>
@@ -113,12 +126,28 @@ const description = computed(() => {
 }
 .branch-indicator {
   position: absolute;
-  right: 4px;
-  bottom: 4px;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: 0;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--bt-text-secondary);
+}
+.branch-indicator:hover {
+  color: var(--bt-primary);
+}
+.branch-indicator:focus-visible {
+  outline-offset: -2px;
+}
+.branch-indicator .app-icon {
   width: 16px;
   height: 16px;
-  color: var(--bt-text-secondary);
-  pointer-events: none;
 }
 /* Handles must retain their geometry for edge measurement. */
 :deep(.vue-flow__handle) {
