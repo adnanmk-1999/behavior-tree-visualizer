@@ -1,4 +1,4 @@
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, getCurrentInstance, onMounted, ref, watch, type Ref } from 'vue'
 import type { BehaviorTreeDefinition, NodeCategoryMap } from '@/types/behaviorTree'
 import type { NodeStatusMap } from '@/types/behaviorTreeEvents'
 import {
@@ -18,10 +18,20 @@ export function useBehaviorTreeView(
 ) {
   const context =
     typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')
-  if (context) {
-    context.font = `700 24px ${getComputedStyle(document.documentElement).fontFamily}`
+  const instance = getCurrentInstance()
+  const labelFont = ref('700 24px sans-serif')
+  if (context && instance) {
+    onMounted(() => {
+      // Measure the embedding container's font, which can differ from the document font.
+      labelFont.value = `700 24px ${getComputedStyle(instance.vnode.el as Element).fontFamily}`
+    })
   }
-  const measureLabel = context ? (label: string) => context.measureText(label).width : undefined
+  const measureLabel = context
+    ? (label: string) => {
+        context.font = labelFont.value
+        return context.measureText(label).width
+      }
+    : undefined
   const runningPathOnly = ref(false)
   const subtrees = ref<SubtreeVisibility>('hidden')
   const branchOverrides = ref(new Map<string, boolean>())

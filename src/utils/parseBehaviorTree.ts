@@ -43,10 +43,11 @@ function parseNode(element: Element): BehaviorTreeNode {
 
 export function parseBehaviorTree(xml: string): BehaviorTreeDocument {
   const document = new DOMParser().parseFromString(xml, 'application/xml')
-  const parseError = document.getElementsByTagNameNS(
-    'http://www.mozilla.org/newlayout/xml/parsererror.xml',
-    'parsererror',
-  )[0]
+  const parseError =
+    document.getElementsByTagNameNS(
+      'http://www.mozilla.org/newlayout/xml/parsererror.xml',
+      'parsererror',
+    )[0] ?? document.getElementsByTagNameNS('http://www.w3.org/1999/xhtml', 'parsererror')[0]
   if (parseError) {
     throw new Error(
       `Invalid XML: ${parseError.textContent?.trim() || 'Unable to parse the document.'}`,

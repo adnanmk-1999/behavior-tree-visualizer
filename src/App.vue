@@ -9,6 +9,7 @@ import type { BehaviorTreeDefinition, BehaviorTreeDocument } from '@/types/behav
 import { parseBehaviorTree } from '@/utils/parseBehaviorTree'
 import { loadBehaviorTreeEvents } from '@/utils/parseBehaviorTreeEvents'
 import type { BehaviorTreeRecording } from '@/types/behaviorTreeEvents'
+import '@/assets/workspace.css'
 
 const parsedDocument = shallowRef<BehaviorTreeDocument | null>(null)
 const showDefinitions = ref(false)
@@ -70,7 +71,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell bt-theme">
     <a v-if="currentTree" class="skip-link" href="#tree-workspace">Skip to visualization</a>
     <header class="app-header">
       <div class="brand">
@@ -81,7 +82,7 @@ onMounted(async () => {
       </div>
       <div class="header-meta">
         <span :title="xmlUrl">
-          <AppIcon name="file" /> tree.xml
+          <AppIcon name="file" /> <span class="filename">tree.xml</span>
         </span>
       </div>
     </header>
@@ -101,25 +102,40 @@ onMounted(async () => {
       <template v-else-if="parsedDocument">
         <section class="tree-header" aria-labelledby="tree-heading">
           <div class="tree-title">
-            <h2 id="tree-heading">{{ currentTree?.ID ?? 'RobotTree' }}</h2>
+            <h2 id="tree-heading" :title="currentTree?.ID ?? 'RobotTree'">
+              {{ currentTree?.ID ?? 'RobotTree' }}
+            </h2>
             <span class="tree-level">{{ history.length > 1 ? 'Subtree' : 'Root tree' }}</span>
           </div>
           <template v-if="currentTree">
             <nav class="tree-navigation" aria-label="Behavior tree navigation">
               <div class="navigation-actions">
-                <button class="ui-button" type="button" :disabled="history.length < 2"
-                  @click="goTo(history.length - 2)">
+                <button
+                  class="ui-button"
+                  type="button"
+                  :disabled="history.length < 2"
+                  @click="goTo(history.length - 2)"
+                >
                   <AppIcon name="back" /> Back
                 </button>
-                <button class="ui-button button-quiet" type="button" :disabled="history.length < 2" @click="goTo(0)">
+                <button
+                  class="ui-button button-quiet"
+                  type="button"
+                  :disabled="history.length < 2"
+                  @click="goTo(0)"
+                >
                   <AppIcon name="home" /> RobotTree
                 </button>
               </div>
               <ol class="breadcrumbs">
                 <li v-for="(tree, index) in history" :key="index">
                   <AppIcon v-if="index > 0" name="chevron" />
-                  <button type="button" :aria-current="index === history.length - 1 ? 'page' : undefined"
-                    :title="breadcrumbLabel(tree)" @click="goTo(index)">
+                  <button
+                    type="button"
+                    :aria-current="index === history.length - 1 ? 'page' : undefined"
+                    :title="breadcrumbLabel(tree)"
+                    @click="goTo(index)"
+                  >
                     {{ breadcrumbLabel(tree) }}
                   </button>
                 </li>
@@ -127,11 +143,18 @@ onMounted(async () => {
             </nav>
             <p class="instance-path">
               Instance
-              <code>{{
-                currentTree._fullpath === ''
-                  ? 'RobotTree (root)'
-                  : (currentTree._fullpath ?? '(path missing)')
-              }}</code>
+              <code
+                :title="
+                  currentTree._fullpath === ''
+                    ? 'RobotTree (root)'
+                    : (currentTree._fullpath ?? '(path missing)')
+                "
+                >{{
+                  currentTree._fullpath === ''
+                    ? 'RobotTree (root)'
+                    : (currentTree._fullpath ?? '(path missing)')
+                }}</code
+              >
             </p>
           </template>
         </section>
@@ -139,9 +162,16 @@ onMounted(async () => {
         <p v-if="navigationError" class="notice notice-error" role="alert">{{ navigationError }}</p>
         <template v-if="currentTree">
           <section class="recording-section" aria-label="Recording playback">
-            <PlaybackControls :state="playback.state" :disabled="recordingLoading || !recording?.events.length"
-              :event-count="recording?.events.length" @play="playback.play" @pause="playback.pause"
-              @reset="playback.reset" @seek="playback.seek" @set-speed="playback.setSpeed" />
+            <PlaybackControls
+              :state="playback.state"
+              :disabled="recordingLoading || !recording?.events.length"
+              :event-count="recording?.events.length"
+              @play="playback.play"
+              @pause="playback.pause"
+              @reset="playback.reset"
+              @seek="playback.seek"
+              @set-speed="playback.setSpeed"
+            />
             <p v-if="recordingLoading" class="recording-message" role="status">
               Loading recorded execution…
             </p>
@@ -157,9 +187,14 @@ onMounted(async () => {
             </p>
           </section>
           <div id="tree-workspace" tabindex="-1">
-            <BehaviorTreeViewer :key="JSON.stringify([currentTree.ID, currentTree._fullpath])" :tree="currentTree"
-              :definitions="parsedDocument.behaviorTrees" :node-models="parsedDocument.nodeModels"
-              :statuses="playback.statuses" @open-subtree="openSubTree" />
+            <BehaviorTreeViewer
+              :key="JSON.stringify([currentTree.ID, currentTree._fullpath])"
+              :tree="currentTree"
+              :definitions="parsedDocument.behaviorTrees"
+              :node-models="parsedDocument.nodeModels"
+              :statuses="playback.statuses"
+              @open-subtree="openSubTree"
+            />
           </div>
         </template>
         <p v-else class="notice" role="status">
@@ -172,8 +207,13 @@ onMounted(async () => {
               <AppIcon name="list" /> Tree definitions
               <span>{{ parsedDocument.behaviorTrees.length }}</span>
             </h2>
-            <button class="ui-button button-quiet" type="button" :aria-expanded="showDefinitions"
-              aria-controls="tree-definitions" @click="showDefinitions = !showDefinitions">
+            <button
+              class="ui-button button-quiet"
+              type="button"
+              :aria-expanded="showDefinitions"
+              aria-controls="tree-definitions"
+              @click="showDefinitions = !showDefinitions"
+            >
               {{ showDefinitions ? 'Hide definitions' : 'Show definitions' }}
               <AppIcon :name="showDefinitions ? 'close' : 'down'" />
             </button>
@@ -217,14 +257,36 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.app-shell {
+  container: bt-app / inline-size;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+#tree-workspace {
+  flex: 1 0 400px;
+  min-height: 0;
+}
+
+.filename,
+.tree-title h2,
+.instance-path code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .skip-link {
   position: absolute;
   top: -5rem;
   left: 1rem;
   z-index: 100;
   padding: 0.75rem 1rem;
-  background: var(--surface);
-  border-radius: 6px;
+  background: var(--bt-surface);
+  border-radius: 4px;
 }
 
 .skip-link:focus {
@@ -237,15 +299,17 @@ onMounted(async () => {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 1rem;
-  min-height: 64px;
-  padding: 0.75rem 1.5rem;
-  color: #f5f8ff;
-  background: var(--navy);
+  min-height: 48px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--bt-border);
+  padding: 8px 16px;
+  color: var(--bt-text);
+  background: var(--bt-surface);
 }
 
 .brand,
 .header-meta,
-.header-meta>span,
+.header-meta > span,
 .tree-title,
 .navigation-actions,
 .definitions-heading,
@@ -265,43 +329,49 @@ onMounted(async () => {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  color: #c8ddff;
-  border: 1px solid #58708e;
-  border-radius: 8px;
+  color: var(--bt-primary);
 }
 
 h1 {
   margin: 0;
-  font-size: 1.125rem;
-  font-weight: 650;
-  line-height: 1.3;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 28px;
 }
 
 .workspace-label,
 .header-meta {
   font-size: 0.875rem;
-  color: #c3d2e3;
+  color: var(--bt-text-secondary);
 }
 
 .workspace-label {
   padding-left: 1rem;
-  border-left: 1px solid #496079;
+  border-left: 1px solid var(--bt-border);
 }
 
 .header-meta {
-  gap: 1.5rem;
+  min-width: 0;
+  max-width: 100%;
+  gap: 16px;
 }
 
-.header-meta>span {
-  gap: 0.5rem;
+.header-meta > span {
+  min-width: 0;
+  gap: 8px;
 }
 
 .read-only {
-  color: #e0eaf6;
+  color: var(--bt-text);
 }
 
 .app-main {
-  padding: 1.25rem 1.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 16px 8px;
 }
 
 .tree-header {
@@ -309,27 +379,31 @@ h1 {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.25rem 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .tree-title {
-  flex-wrap: wrap;
+  min-width: 0;
+  gap: 8px;
 }
 
 .tree-title h2 {
   margin: 0;
-  font-size: 1.625rem;
-  font-weight: 650;
-  letter-spacing: -0.025em;
-  overflow-wrap: anywhere;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
 }
 
 .tree-level {
   padding: 0.125rem 0.5rem;
-  border: 1px solid #c5d3e4;
+  border: 1px solid var(--bt-border);
+  flex-shrink: 0;
   border-radius: 4px;
-  color: #405b7a;
-  font-size: 0.8125rem;
+  color: var(--bt-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
 }
 
 .tree-navigation {
@@ -337,7 +411,7 @@ h1 {
   align-items: center;
   gap: 1rem;
   min-width: 0;
-  max-width: 65vw;
+  max-width: 100%;
 }
 
 .navigation-actions {
@@ -365,31 +439,31 @@ h1 {
 
 .breadcrumbs .app-icon {
   width: 14px;
-  color: var(--muted);
+  color: var(--bt-text-secondary);
 }
 
 .breadcrumbs button {
   max-width: 25ch;
-  min-height: 40px;
+  min-height: 32px;
   padding: 0.375rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   border: 0;
   border-radius: 4px;
-  color: var(--muted);
+  color: var(--bt-text-secondary);
   background: transparent;
   font-size: 0.875rem;
 }
 
 .breadcrumbs button:hover {
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--bt-primary);
+  background: var(--bt-primary-soft);
 }
 
 .breadcrumbs [aria-current='page'] {
-  font-weight: 650;
-  color: var(--ink);
+  font-weight: 500;
+  color: var(--bt-text);
 }
 
 .instance-path {
@@ -397,8 +471,9 @@ h1 {
   display: flex;
   gap: 0.5rem;
   margin: 0;
-  font-size: 0.8125rem;
-  color: var(--muted);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--bt-text-secondary);
 }
 
 .instance-path code {
@@ -412,15 +487,15 @@ h1 {
 
 .recording-message {
   margin: 0.5rem 0;
-  color: var(--muted);
+  color: var(--bt-text-secondary);
   font-size: 0.875rem;
 }
 
 .definitions {
   margin-top: 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
+  border: 1px solid var(--bt-border);
+  border-radius: 4px;
+  background: var(--bt-surface);
 }
 
 .definitions-heading {
@@ -432,27 +507,28 @@ h1 {
 
 .definitions-heading h2 {
   margin: 0;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
 }
 
 .definitions-heading h2 span {
-  color: var(--muted);
+  color: var(--bt-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
-.definitions-content>p {
+.definitions-content > p {
   margin: 0;
   padding: 0.5rem 1rem 1rem;
-  color: var(--muted);
+  color: var(--bt-text-secondary);
   font-size: 0.875rem;
 }
 
 .definitions-table {
   max-height: 26rem;
   overflow: auto;
-  border-top: 1px solid var(--line);
-  border-radius: 0 0 8px 8px;
+  border-top: 1px solid var(--bt-border);
+  border-radius: 0 0 4px 4px;
 }
 
 table {
@@ -466,25 +542,25 @@ td {
   padding: 0.75rem 1rem;
   text-align: left;
   vertical-align: top;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--bt-border);
   overflow-wrap: anywhere;
 }
 
 thead th {
   position: sticky;
   top: 0;
-  background: var(--surface-soft);
-  color: var(--muted);
-  font-weight: 600;
+  background: var(--bt-surface-hover);
+  color: var(--bt-text-secondary);
+  font-weight: 500;
 }
 
 tbody th {
   width: 25%;
   min-width: 10rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
-tbody tr:last-child>* {
+tbody tr:last-child > * {
   border-bottom: 0;
 }
 
@@ -494,30 +570,30 @@ tbody tr:last-child>* {
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.875rem 0.25rem 0;
-  color: var(--muted);
+  color: var(--bt-text-secondary);
   font-size: 0.75rem;
 }
 
 .loading-state {
-  min-height: 65vh;
+  flex: 1;
   padding: 3rem 1rem;
-  color: var(--muted);
+  color: var(--bt-text-secondary);
 }
 
 .loading-state h2 {
-  color: var(--ink);
+  color: var(--bt-text);
   font-size: 1.25rem;
 }
 
 .loading-placeholder {
-  height: 40vh;
+  height: 240px;
   margin-top: 2rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface-soft);
+  border: 1px solid var(--bt-border);
+  border-radius: 4px;
+  background: var(--bt-surface-hover);
 }
 
-@media (max-width: 1100px) {
+@container bt-app (max-width: 1100px) {
   .workspace-label {
     display: none;
   }
@@ -533,20 +609,25 @@ tbody tr:last-child>* {
   }
 }
 
-@media (max-width: 600px) {
+@container bt-app (max-width: 600px) {
   .app-header {
-    padding: 0.75rem 1rem;
-    gap: 0.625rem;
+    padding: 8px 12px;
+    gap: 8px;
   }
 
   .header-meta {
     width: 100%;
     justify-content: space-between;
-    font-size: 0.8125rem;
+    font-size: 12px;
+    line-height: 16px;
   }
 
   .app-main {
-    padding: 1rem 0.75rem 0.5rem;
+    padding: 8px;
+  }
+
+  #tree-workspace {
+    flex-basis: 800px;
   }
 
   .tree-navigation {

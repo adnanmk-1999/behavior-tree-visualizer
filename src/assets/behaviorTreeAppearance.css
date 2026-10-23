@@ -1,68 +1,58 @@
 [data-category] {
-  --category-color: #6b7280;
+  --bt-category-color: var(--bt-text-secondary);
 }
 [data-category='Control'] {
-  --category-color: #1d4ed8;
+  --bt-category-color: var(--bt-category-control);
 }
 [data-category='Action'] {
-  --category-color: #6d28d9;
+  --bt-category-color: var(--bt-category-action);
 }
 [data-category='Condition'] {
-  --category-color: #0e7490;
+  --bt-category-color: var(--bt-category-condition);
 }
 [data-category='Decorator'] {
-  --category-color: #b45309;
-}
-[data-category='SubTree'] {
-  --category-color: #475569;
+  --bt-category-color: var(--bt-category-decorator);
 }
 
 [data-status] {
-  --status-background: #fff;
-  --status-border: transparent;
-  --status-text: #475569;
+  --bt-status-background: var(--bt-surface);
+  --bt-status-border: var(--bt-border);
+  --bt-status-text: var(--bt-text-secondary);
 }
 [data-status='RUNNING'] {
-  --status-background: #facc15;
-  --status-border: #a16207;
-  --status-text: #422006;
+  --bt-status-background: var(--bt-primary-soft);
+  --bt-status-border: var(--bt-primary);
+  --bt-status-text: var(--bt-primary);
 }
 [data-status='SUCCESS'] {
-  --status-background: #dcfce7;
-  --status-border: #16a34a;
-  --status-text: #166534;
+  --bt-status-background: color-mix(in srgb, var(--bt-success) 16%, var(--bt-surface));
+  --bt-status-border: var(--bt-success);
+  --bt-status-text: var(--bt-success-text);
 }
 [data-status='FAILURE'] {
-  --status-background: #fee2e2;
-  --status-border: #dc2626;
-  --status-text: #991b1b;
+  --bt-status-background: var(--bt-error-surface);
+  --bt-status-border: var(--bt-error);
+  --bt-status-text: var(--bt-error-text);
 }
 [data-status='IDLE'] {
-  --status-background: #f1f5f9;
-  --status-border: #94a3b8;
-  --status-text: #475569;
+  --bt-status-background: color-mix(in srgb, var(--bt-secondary) 16%, var(--bt-surface));
 }
 [data-status='SKIPPED'] {
-  --status-background: #fafafa;
-  --status-border: #d4d4d4;
-  --status-text: #525252;
+  --bt-status-background: var(--bt-background);
 }
 
 .node-status-surface {
-  background: var(--status-background);
-}
-.node-status-surface[data-status='RUNNING'] {
-  background: #fffbeb;
+  background: var(--bt-status-background);
 }
 
 .execution-status {
   flex-shrink: 0;
-  border: 1px solid var(--status-border);
-  border-radius: 3px;
+  border: 1px solid var(--bt-status-border);
+  border-radius: 4px;
   padding: 2px 6px;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 24px;
-  background: var(--status-background);
-  color: var(--status-text);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  background: var(--bt-status-background);
+  color: var(--bt-status-text);
 }

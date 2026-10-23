@@ -1,82 +1,92 @@
-:root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: #182b45;
-  background: #edf1f6;
-  font-synthesis: none;
-  --surface: #fff;
-  --surface-soft: #f4f7fb;
-  --ink: #182b45;
-  --muted: #53647a;
-  --line: #d7e0ea;
-  --accent: #245dcc;
-  --accent-hover: #184ba9;
-  --accent-soft: #eaf1ff;
-  --navy: #152b43;
+:where(.bt-theme) {
+  --bt-background: rgb(var(--v-theme-background, 24, 24, 24));
+  --bt-surface: rgb(var(--v-theme-surface, 43, 43, 42));
+  --bt-primary: rgb(var(--v-theme-primary, 255, 237, 0));
+  --bt-overlay-surface: color-mix(in srgb, var(--bt-text) 2.5%, var(--bt-surface));
+  --bt-overlay-shadow: 0 2px 4px rgb(0 0 0 / 28%), 0 4px 8px rgb(0 0 0 / 12%);
+  --bt-overlay-button-surface: rgb(var(--v-theme-blue-grey-darken-1, 84, 110, 122));
+  --bt-tooltip-surface: rgb(var(--v-theme-surface-variant, 199, 199, 199));
+  --bt-tooltip-text: rgb(var(--v-theme-on-surface-variant, 0, 0, 0));
+  --bt-on-primary: rgb(var(--v-theme-on-primary, 0, 0, 0));
+  --bt-secondary: rgb(var(--v-theme-secondary, 120, 117, 134));
+  --bt-error: rgb(var(--v-theme-error, 209, 21, 22));
+  --bt-warning: rgb(var(--v-theme-warning, 245, 128, 42));
+  --bt-info: rgb(var(--v-theme-info, 40, 163, 96));
+  --bt-success: rgb(var(--v-theme-success, 76, 175, 80));
+  --bt-text: rgb(var(--v-theme-on-surface, 255, 255, 255));
+  --bt-text-secondary: rgba(var(--v-theme-on-surface, 255, 255, 255), 0.7);
+  --bt-border: rgba(var(--v-border-color, 255, 255, 255), var(--v-border-opacity, 0.12));
+  --bt-border-hover: color-mix(in srgb, var(--bt-text) 40%, transparent);
+  --bt-surface-hover: color-mix(in srgb, var(--bt-text) 8%, var(--bt-surface));
+  --bt-primary-soft: color-mix(in srgb, var(--bt-primary) 12%, var(--bt-surface));
+  --bt-primary-hover: color-mix(in srgb, var(--bt-text) 12%, var(--bt-primary));
+  --bt-track: color-mix(in srgb, var(--bt-text) 20%, var(--bt-surface));
+  --bt-edge: color-mix(in srgb, var(--bt-text) 42%, var(--bt-background));
+  --bt-selection: var(--bt-text);
+  --bt-error-surface: color-mix(in srgb, var(--bt-error) 12%, var(--bt-surface));
+  /* Pale semantic text keeps small labels readable on dark tinted surfaces. */
+  --bt-error-text: color-mix(in srgb, var(--bt-error) 45%, var(--bt-text));
+  --bt-success-text: color-mix(in srgb, var(--bt-success) 60%, var(--bt-text));
+  --bt-category-control: #9ac3ff;
+  --bt-category-action: #c7adff;
+  --bt-category-condition: #78d4da;
+  --bt-category-decorator: color-mix(in srgb, var(--bt-warning) 65%, var(--bt-text));
+  --bt-font-mono: 'Source Code Pro', ui-monospace, SFMono-Regular, Consolas, monospace;
+  color-scheme: dark;
+  color: var(--bt-text);
+  background: var(--bt-background);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: normal;
+  text-align: start;
 }
 
-* {
+:where(.bt-theme, .bt-theme *) {
   box-sizing: border-box;
+  scrollbar-color: var(--bt-track) var(--bt-surface);
+  scrollbar-width: thin;
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-}
-
-button,
-input,
-select {
+:where(.bt-theme) :is(button, input, select) {
   font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
-button,
-select,
-summary,
-input[type='range'] {
+:where(.bt-theme) :is(button, select, summary, input[type='range']) {
   cursor: pointer;
 }
 
-button:disabled,
-select:disabled,
-input:disabled {
+:where(.bt-theme) :is(button, select, input):disabled {
   cursor: not-allowed;
 }
 
-button,
-a,
-input,
-select,
-summary {
-  -webkit-tap-highlight-color: transparent;
-}
-
-:focus-visible {
-  outline: 3px solid var(--accent);
+:where(.bt-theme) :focus-visible {
+  outline: 2px solid var(--bt-primary);
   outline-offset: 3px;
 }
 
-::selection {
-  color: #163763;
-  background: #cfe1ff;
+:where(.bt-theme) ::selection {
+  color: var(--bt-on-primary);
+  background: var(--bt-primary);
 }
 
-input,
-textarea {
-  caret-color: var(--accent);
+:where(.bt-theme) :is(input, textarea) {
+  caret-color: var(--bt-primary);
 }
 
-a {
-  color: var(--accent);
+:where(.bt-theme) a {
+  color: var(--bt-primary);
   text-underline-offset: 3px;
 }
 
-code {
-  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+:where(.bt-theme) code {
+  font-family: var(--bt-font-mono);
 }
 
-.sr-only {
+:where(.bt-theme) .sr-only {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -88,106 +98,112 @@ code {
   border: 0;
 }
 
-.ui-button {
+:where(.bt-theme) .ui-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  min-height: 40px;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.25;
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--bt-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--bt-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
   text-decoration: none;
   transition:
     background-color 140ms ease,
     border-color 140ms ease;
 }
 
-.ui-button:hover:not(:disabled) {
-  border-color: #91a4bd;
-  background: var(--surface-soft);
+:where(.bt-theme) .ui-button:hover:not(:disabled) {
+  border-color: var(--bt-border-hover);
+  background: var(--bt-surface-hover);
 }
 
-.ui-button:active:not(:disabled) {
-  background: #e5ebf3;
+:where(.bt-theme) .ui-button:active:not(:disabled) {
+  background: var(--bt-track);
 }
 
-.ui-button:disabled {
-  color: #69798c;
-  background: #edf1f6;
-  border-color: #e0e6ee;
+:where(.bt-theme) .button-primary {
+  color: var(--bt-on-primary);
+  background: var(--bt-primary);
+  border-color: var(--bt-primary);
 }
 
-.button-primary {
-  color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
+:where(.bt-theme) .button-primary:hover:not(:disabled),
+:where(.bt-theme) .button-primary:active:not(:disabled) {
+  color: var(--bt-on-primary);
+  background: var(--bt-primary-hover);
+  border-color: var(--bt-primary-hover);
 }
 
-.button-primary:hover:not(:disabled),
-.button-primary:active:not(:disabled) {
-  color: #fff;
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+:where(.bt-theme) .ui-button:disabled {
+  color: var(--bt-text-secondary);
+  background: var(--bt-surface-hover);
+  border-color: transparent;
+  opacity: 0.5;
 }
 
-.button-quiet {
+:where(.bt-theme) .button-quiet {
   background: transparent;
   border-color: transparent;
 }
 
-.icon-button {
-  width: 40px;
-  padding: 0.5rem;
+:where(.bt-theme) .icon-button {
+  width: 32px;
+  padding: 4px;
 }
 
-.ui-select {
-  min-height: 40px;
-  padding: 0.4rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--ink);
-  background: var(--surface);
-  font-size: 0.875rem;
+:where(.bt-theme) .ui-select {
+  min-height: 32px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--bt-border);
+  border-radius: 4px;
+  color: var(--bt-text);
+  background: var(--bt-surface);
+  font-size: 14px;
 }
 
-.ui-select:hover:not(:disabled) {
-  border-color: #91a4bd;
+:where(.bt-theme) .ui-select:hover:not(:disabled) {
+  border-color: var(--bt-border-hover);
 }
 
-.notice {
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
+:where(.bt-theme) .notice {
+  padding: 12px 16px;
+  border: 1px solid var(--bt-border);
+  border-radius: 4px;
+  background: var(--bt-surface);
   overflow-wrap: anywhere;
 }
 
-.notice-error {
-  color: #922b24;
-  border-color: #e8b9b4;
-  background: #fff5f3;
+:where(.bt-theme) .notice-error {
+  color: var(--bt-error-text);
+  border-color: var(--bt-error);
+  background: var(--bt-error-surface);
 }
 
-@media (max-width: 600px) {
-  .ui-button,
-  .ui-select {
+:where(.bt-theme) .notice h2 {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+@media (pointer: coarse) {
+  :where(.bt-theme) :is(.ui-button, .ui-select) {
     min-height: 44px;
   }
-  .icon-button {
+  :where(.bt-theme) .icon-button {
     width: 44px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :where(.bt-theme, .bt-theme *, .bt-theme *::before, .bt-theme *::after) {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;

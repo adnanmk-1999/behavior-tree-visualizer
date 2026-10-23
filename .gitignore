@@ -28,6 +28,9 @@ coverage
 
 .eslintcache
 
+# Local design notes and screenshots
+/.impeccable/
+
 # Cypress
 /cypress/videos/
 /cypress/screenshots/

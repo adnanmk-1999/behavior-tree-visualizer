@@ -36,6 +36,7 @@ const description = computed(() => {
     <NodeCategoryIcon :category="data.category" />
     <strong class="node-name">{{ data.label }}</strong>
     <span class="sr-only">{{ status === 'UNOBSERVED' ? 'Not observed' : status }}</span>
+    <AppIcon class="status-indicator" :name="status" />
     <button
       v-if="data.collapsible"
       type="button"
@@ -63,6 +64,7 @@ const description = computed(() => {
 
 <style scoped>
 .behavior-tree-node {
+  position: relative;
   box-sizing: border-box;
   width: 100%;
   height: 100%;
@@ -70,9 +72,9 @@ const description = computed(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid #a4b2c5;
-  border-radius: 12px;
-  color: #182b45;
+  border: 1px solid var(--bt-edge);
+  border-radius: 4px;
+  color: var(--bt-text);
   text-align: left;
   cursor: pointer;
 }
@@ -99,32 +101,43 @@ button {
   height: 36px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   background: transparent;
   color: inherit;
   cursor: pointer;
 }
 button:hover:not(:disabled) {
-  background: #eaf1ff;
-  border-color: #245dcc;
+  background: var(--bt-surface-hover);
+  border-color: var(--bt-primary);
 }
 button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 .behavior-tree-node:hover {
-  outline: 1px solid #91a4bd;
+  outline: 1px solid var(--bt-border-hover);
   outline-offset: 2px;
 }
 .behavior-tree-node[data-status='RUNNING'] {
-  box-shadow: inset 0 0 0 2px #a16207;
+  box-shadow: inset 0 0 0 2px var(--bt-primary);
 }
 .behavior-tree-node.selected {
-  outline: 2px solid #172033;
+  outline: 2px solid var(--bt-selection);
   outline-offset: 3px;
+}
+.status-indicator {
+  position: absolute;
+  right: 6px;
+  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  color: var(--bt-status-text);
 }
 /* Handles must retain their geometry for edge measurement. */
 :deep(.vue-flow__handle) {
+  width: 6px;
+  height: 6px;
+  border: 1px solid transparent;
   opacity: 0;
   pointer-events: none;
 }

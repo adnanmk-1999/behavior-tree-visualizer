@@ -24,7 +24,7 @@ const icons = {
 .category-icon {
   display: inline-flex;
   flex-shrink: 0;
-  color: var(--category-color);
+  color: var(--bt-category-color);
 }
 .app-icon {
   width: 100%;

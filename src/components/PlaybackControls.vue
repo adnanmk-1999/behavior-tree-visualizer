@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { useId } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { PLAYBACK_SPEEDS } from '@/types/behaviorTreeEvents'
 import type { PlaybackState } from '@/types/behaviorTreeEvents'
+import '@/assets/workspace.css'
+
+const timelineId = useId()
 
 defineProps<{ state: Readonly<PlaybackState>; disabled: boolean; eventCount?: number }>()
 defineEmits<{ play: []; pause: []; reset: []; seek: [timeMs: number]; setSpeed: [speed: number] }>()
@@ -12,7 +16,7 @@ function seconds(timeMs: number) {
 </script>
 
 <template>
-  <fieldset class="playback-controls" :disabled="disabled">
+  <fieldset class="playback-controls bt-theme" :disabled="disabled">
     <legend class="sr-only">Recorded execution</legend>
     <div class="recording-heading">
       <div class="recording-label">
@@ -67,14 +71,14 @@ function seconds(timeMs: number) {
       </div>
       <div class="timeline-area">
         <div class="timeline-labels">
-          <label for="playback-position">Playback position</label>
+          <label :for="timelineId">Playback position</label>
           <span class="playback-time" role="timer" aria-label="Playback time" aria-live="off">
             <strong>{{ seconds(state.positionMs) }} s</strong>
             <span> / {{ seconds(state.durationMs) }} s</span>
           </span>
         </div>
         <input
-          id="playback-position"
+          :id="timelineId"
           type="range"
           min="0"
           :max="state.durationMs"
@@ -83,7 +87,7 @@ function seconds(timeMs: number) {
           :disabled="state.durationMs === 0"
           :aria-valuetext="`${seconds(state.positionMs)} of ${seconds(state.durationMs)} seconds`"
           :style="{
-            '--progress': `${state.durationMs ? (state.positionMs / state.durationMs) * 100 : 0}%`,
+            '--bt-progress': `${state.durationMs ? (state.positionMs / state.durationMs) * 100 : 0}%`,
           }"
           @input="$emit('seek', Number(($event.target as HTMLInputElement).value))"
         />
@@ -105,12 +109,13 @@ function seconds(timeMs: number) {
 
 <style scoped>
 .playback-controls {
+  container: bt-playback / inline-size;
   min-width: 0;
   margin: 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
+  padding: 8px 12px;
+  border: 1px solid var(--bt-border);
+  border-radius: 4px;
+  background: var(--bt-surface);
 }
 .recording-heading,
 .recording-label,
@@ -128,30 +133,33 @@ function seconds(timeMs: number) {
 .recording-label {
   gap: 0.75rem;
   flex-wrap: wrap;
-  font-size: 0.8125rem;
+  font-size: 12px;
+  line-height: 16px;
 }
 .recording-label strong {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
 }
 .recording-label > span,
 .timeline-labels,
 .speed-control {
-  color: var(--muted);
+  color: var(--bt-text-secondary);
 }
 .transport-status {
-  color: var(--muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  color: var(--bt-text-secondary);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
 }
 .transport-status.playing {
-  color: var(--accent);
+  color: var(--bt-primary);
 }
 .transport-strip {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 1.5rem;
+  gap: 16px;
 }
 .playback-actions {
   gap: 0.25rem;
@@ -171,10 +179,13 @@ function seconds(timeMs: number) {
   flex-shrink: 0;
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
+  font-family: var(--bt-font-mono);
+  min-width: 21ch;
+  text-align: right;
 }
 .playback-time strong {
-  color: var(--ink);
-  font-weight: 650;
+  color: var(--bt-text);
+  font-weight: 500;
 }
 .speed-control {
   gap: 0.5rem;
@@ -191,38 +202,46 @@ input[type='range'] {
   margin: 0;
   border-radius: 4px;
   background: transparent;
-  accent-color: var(--accent);
+  accent-color: var(--bt-primary);
 }
 input[type='range']::-webkit-slider-runnable-track {
   height: 5px;
   border-radius: 4px;
-  background: linear-gradient(to right, var(--accent) var(--progress), #dbe3ef var(--progress));
+  background: linear-gradient(
+    to right,
+    var(--bt-primary) var(--bt-progress),
+    var(--bt-track) var(--bt-progress)
+  );
 }
 input[type='range']::-moz-range-track {
   height: 5px;
   border-radius: 4px;
-  background: linear-gradient(to right, var(--accent) var(--progress), #dbe3ef var(--progress));
+  background: linear-gradient(
+    to right,
+    var(--bt-primary) var(--bt-progress),
+    var(--bt-track) var(--bt-progress)
+  );
 }
 input[type='range']::-webkit-slider-thumb {
   appearance: none;
   width: 18px;
   height: 18px;
   margin-top: -6.5px;
-  border: 3px solid var(--accent);
+  border: 3px solid var(--bt-primary);
   border-radius: 50%;
-  background: #fff;
+  background: var(--bt-primary);
 }
 input[type='range']::-moz-range-thumb {
   width: 12px;
   height: 12px;
-  border: 3px solid var(--accent);
+  border: 3px solid var(--bt-primary);
   border-radius: 50%;
-  background: #fff;
+  background: var(--bt-primary);
 }
 input:disabled {
   opacity: 0.5;
 }
-@media (max-width: 700px) {
+@container bt-playback (max-width: 700px) {
   .transport-strip {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.75rem;
@@ -237,14 +256,11 @@ input:disabled {
   .recording-label > span {
     font-size: 0.75rem;
   }
-  .playback-controls {
-    padding: 0.75rem;
-  }
   input[type='range'] {
     height: 40px;
   }
 }
-@media (max-width: 380px) {
+@container bt-playback (max-width: 380px) {
   .speed-control {
     flex-direction: column;
     align-items: flex-start;

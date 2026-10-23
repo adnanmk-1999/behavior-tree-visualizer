@@ -9,13 +9,68 @@ The playback timeline loads the exported recording and shows each node's recorde
 execution status at the selected time.
 
 The engineering workspace uses the full window: tree navigation at the top,
-recorded playback immediately above the graph, and graph filters and view controls
-in a single toolbar. Click a node to open the inspector on the right (below the
+recorded playback immediately above the graph, and controls anchored inside the
+plain canvas. A collapsible top-left panel shows node/connection counts, zoom,
+and visibility state. Bottom-right icon groups provide zoom and view actions;
+all eight blue-grey viewport buttons stay visible side by side in one horizontal row,
+including Running path only and the three subtree expansion modes.
+Click a node to open the inspector on the right (below the
 graph on smaller screens). The legend remains below the visualization, definitions
 start collapsed, and **How to explore** opens the detailed interaction help.
 **Fit tree** is the initial view; **Readable view** brings the root to a legible scale.
-Presentation tokens live in `src/assets/workspace.css`; shared category and status
-colors remain in `src/assets/behaviorTreeAppearance.css`.
+The interface uses the KopsiHub authenticated dark theme with yellow primary
+controls, compact inherited typography, and 4px corners. Presentation tokens live
+under `.bt-theme` in `src/assets/workspace.css`; category/status mappings in
+`src/assets/behaviorTreeAppearance.css` are scoped by their owning components.
+See [DESIGN.md](DESIGN.md) for the visual contract.
+
+## Embedding and theming
+
+Import `src/components/BehaviorTreeViewer.vue` from source and give its parent a
+definite height. Pass the selected `tree`, parsed `definitions` (the document's
+`behaviorTrees`), optional `nodeModels`, and optional UID `statuses` map. Handle
+`open-subtree` to navigate separately. The viewer owns graph controls, inspection,
+and the legend; `App.vue` owns standalone chrome, loading, navigation, and playback.
+There is no package export map yet.
+Source imports still use this repository's `@` alias; a future package build must
+resolve those paths before KopsiHub consumes the package.
+
+```vue
+<div class="tree-host">
+  <BehaviorTreeViewer
+    :tree="tree"
+    :definitions="document.behaviorTrees"
+    :node-models="document.nodeModels"
+    :statuses="statuses"
+    @open-subtree="openSubtree"
+  />
+</div>
+```
+
+The host supplies those values and its navigation handler. For example,
+`.tree-host { height: 640px; font-family: inherit; }` provides the sizing contract.
+The viewer fills that height, scrolls internally when needed, and adapts to its
+container width. Its CSS imports travel with the component; no `main.ts` stylesheet
+import is required. The font is inherited and measured at mount; ensure the host
+font is available then. Only standalone `index.html` sets `Roboto, sans-serif`,
+without downloading a font.
+
+Inherited Vuetify variables use RGB channel lists, such as
+`--v-theme-primary: 255, 237, 0`. Supported roles are background, surface, primary,
+on-primary, secondary, error, warning, info, success, on-surface, plus
+`--v-border-color` and `--v-border-opacity`. Defaults match the KopsiHub dark theme.
+For direct `--bt-*` overrides, set the variable on the component's `.bt-theme` root;
+the defaults are defined there, not on the document root. Playback selects and node hover descriptions remain native. Overlay buttons have
+scoped light-grey hover/focus tooltips with dark text; there are no custom portals, dialogs, or file pickers.
+If mounting multiple independent Vue apps, assign each a distinct
+`app.config.idPrefix` before mount so playback slider labels remain unique.
+
+Run `npm test`, `npm run build` (includes type checking), and `npm run lint`.
+With `npm run dev` running, open `/tests/parseBehaviorTree.html`; it should show PASS.
+Chromium 128 was checked at desktop and
+320/390/768px widths. Real KopsiHub integration and Firefox/WebKit are not yet tested.
+
+## XML input
 
 The Vue-independent `parseBehaviorTree(xml)` utility uses the browser's `DOMParser`
 and expects `<root BTCPP_format="4">`. Definitions remain in document order in an
@@ -128,11 +183,13 @@ Names use 24px text; long names truncate
 and remain available in full on hover and in the inspector. UID, registered type,
 category, exact status, and XML attributes remain in the inspector.
 
-Node fills indicate recorded status: pale yellow RUNNING, green SUCCESS, red FAILURE,
-gray IDLE, muted SKIPPED, and white Not observed. Hover also shows the exact status;
-RUNNING retains its gold inner outline. Selection uses a separate dark outer outline.
-The legend below the graph shows the same category icons, status fills,
-gold running path, and selection outline. Handles remain invisible and non-connectable.
+Node fills indicate recorded status on dark surfaces: yellow-tinted RUNNING,
+green-tinted SUCCESS, red-tinted FAILURE, violet-gray IDLE, background-colored
+SKIPPED, and ordinary surface-colored Not observed. Status symbols supplement
+these fills; hover also shows the exact status. RUNNING has a yellow inner ring,
+selection a separate white outer outline, and keyboard focus a dashed yellow outline.
+The legend below the graph shows the same category icons, status fills and symbols,
+yellow running path, and selection outline. Handles remain invisible and non-connectable.
 
 Click any node to open `NodeInspector`; Enter also inspects ordinary nodes.
 For SubTrees and Controls with children, Enter, double-click, and plus/minus toggle contents in the current graph.
@@ -310,9 +367,9 @@ preserve playback position, speed, and playing state.
 
 Category icons identify node types. The node fill shows execution:
 RUNNING is yellow, SUCCESS green, FAILURE red, IDLE gray, and SKIPPED muted neutral.
-RUNNING also adds a pale-yellow card surface and an inner gold accent without
-changing node dimensions or animating the graph. Selection keeps its dark outline.
-Thick gold connections trace the full route from the displayed tree's root to each
+RUNNING also adds a dark yellow-tinted surface and an inner yellow ring without
+changing node dimensions or animating the graph. Selection keeps its white outer outline.
+Thick yellow connections trace the full route from the displayed tree's root to each
 RUNNING node, including shared ancestors. They clear when no RUNNING descendant
 needs that route. This is a navigation cue: ancestor nodes retain their recorded
 statuses. Paths can continue through inline subtree contents when expansion is enabled.
@@ -377,24 +434,25 @@ typed events, and UID status map are ready for WP-07; no WP-07 features are incl
 
 ### Graph visibility controls
 
-The toolbar above the canvas groups path filtering, subtree visibility, and view controls:
+The horizontal button row inside the canvas groups zoom, path filtering, subtree
+visibility, Readable view, and Fit tree:
 
 - **Running path only** hides nodes outside the routes to currently RUNNING nodes.
   Ancestors remain visible for context, with their own recorded statuses.
-- **Subtrees → All expanded** expands all resolvable subtree contents inline.
-  Choose **Collapsed** to hide their contents again.
-- **Subtrees → Running only** expands a subtree when its reference or any descendant
+- **Expand all subtrees** expands all resolvable subtree contents inline.
+  Choose **Collapse subtrees** to hide their contents again.
+- **Expand running subtrees** expands a subtree when its reference or any descendant
   has a recorded RUNNING status. Other subtree contents remain collapsed.
 
-Contents are hidden by default. Combine Running path only with Subtrees → Running
-only for the complete active route through nested definitions. Both follow playback
+Contents are hidden by default. Combine Running path only with Expand running
+subtrees for the complete active route through nested definitions. Both follow playback
 and backward seeks. If no node is RUNNING, the path filter shows an empty message;
-the toolbar stays available.
+the overlay controls stay available.
 
 Double-click an individual SubTree (or use its plus/minus button) to toggle it
 without leaving the current tree. Nested subtrees start collapsed under the default
 mode; expand them individually. Manual choices override the selected bulk mode and
-the selector shows **Custom**. Choosing any bulk mode clears those overrides.
+the status panel shows **Subtrees: Custom**. Choosing any bulk mode clears those overrides.
 Closing an ancestor hides all its descendants but remembers nested choices for
 reopening. Running path only remains an independent filter. Playback and UID status
 mapping continue unchanged; unresolved or empty references have a disabled toggle.
@@ -405,7 +463,7 @@ Controls with execution children use the same double-click, plus/minus, and Ente
 actions. They hide descendants by default at SUCCESS, unless a descendant is still
 recorded RUNNING. Other statuses leave the branch open. Manual choices take priority
 through playback and seeks, survive closing an ancestor, and are independent of the
-Subtrees selector. Changing definitions clears these choices. This only changes
+subtree expansion mode. Changing definitions clears these choices. This only changes
 visibility: a parent's SUCCESS does not imply any particular child status, and hidden
 nodes retain their exact recording data.
 
