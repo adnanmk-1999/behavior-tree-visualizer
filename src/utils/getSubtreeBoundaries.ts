@@ -1,5 +1,5 @@
 import type { BehaviorTreeFlow } from './behaviorTreeToFlow'
-import { NODE_HEIGHT, NODE_MIN_WIDTH } from './layoutTree'
+import { NODE_HEIGHT, NODE_MIN_WIDTH } from './layoutTree.ts'
 
 const CONNECTOR_PADDING = 12
 
