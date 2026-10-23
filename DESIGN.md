@@ -65,11 +65,6 @@ typography:
     fontSize: "24px"
     fontWeight: 700
     lineHeight: "30px"
-  node-type:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-    fontSize: "18px"
-    fontWeight: 400
-    lineHeight: "24px"
   code:
     fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace"
     fontSize: "1rem"
@@ -134,9 +129,9 @@ components:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.workspace}"
-    padding: "7px 9px"
-    width: "360px"
-    height: "208px"
+    padding: "15px 17px"
+    width: "fit-content"
+    height: "76px"
   notice:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
@@ -160,7 +155,7 @@ Borders, aligned labels, and restrained spacing organize the interface. Category
 - Separate category, status, and selection cues.
 - Flat surfaces and short control feedback.
 
-Extracted from implemented source on 2026-10-21. Sources: `src/assets/workspace.css`, `src/assets/behaviorTreeAppearance.css`, `src/App.vue`, the workspace components, and `src/utils/layoutTree.ts`. Surface composition is governed by `.impeccable/surfaces/src-app-vue.md`. Visual review disposition: **RECAPTURE**; desktop/mobile browser screenshots were unavailable in the sandbox. This document records implementation, not visual verification or ship approval.
+Updated from implemented source on 2026-10-22 for compact icon-and-name nodes. Sources: `src/assets/workspace.css`, `src/assets/behaviorTreeAppearance.css`, `src/App.vue`, the workspace components, and `src/utils/layoutTree.ts`. Surface composition is governed by `.impeccable/surfaces/src-app-vue.md`. Visual review disposition: **RECAPTURE**; desktop/mobile browser screenshots were unavailable in the sandbox. This document records implementation, not visual verification or ship approval.
 
 ## Colors
 
@@ -174,23 +169,23 @@ Midnight navy (`navy`) anchors the identity header. The page, ice-blue canvas, w
 
 ### Semantic colors
 
-Category colors are blue Control, violet Action, cyan Condition, amber Decorator, slate SubTree, and gray fallback. Recorded statuses use independent badge background, border, and text tokens: gold RUNNING, green SUCCESS, red FAILURE, blue-gray IDLE, and gray SKIPPED. “Not observed” is plain slate text with a transparent badge background and border. Running nodes also use a pale-gold fill; paths to running nodes use the running-border color. Selection uses a dark outline.
+Category colors are blue Control, violet Action, cyan Condition, amber Decorator, slate SubTree, and gray fallback. Recorded statuses use independent node-fill and inspector-badge tokens: gold RUNNING, green SUCCESS, red FAILURE, blue-gray IDLE, and gray SKIPPED. “Not observed” uses a white node fill and plain slate text in the inspector. Node fills use the status background, with pale gold for RUNNING and white for Not observed; paths to running nodes use the running-border color. Selection uses a dark outline.
 
-**The Independent Signals Rule.** Keep category on the thick node border and category label, execution in its text badge, and selection on an outer outline. A highlighted ancestor path does not change an ancestor's recorded status.
+**The Independent Signals Rule.** Keep category on its icon, execution in the node fill, and selection on an outer outline. Exact status text remains available on hover and in the inspector. A highlighted ancestor path does not change an ancestor's recorded status.
 
 ## Typography
 
-Use the platform system sans throughout. Monospace is reserved for XML keys, attribute values, UIDs, and instance paths. The root size is 16px. The frontmatter captures the tree title, body, controls, captions, graph node name/type, and inspector code roles; there is no separate display typeface.
+Use the platform system sans throughout. Monospace is reserved for XML keys, attribute values, UIDs, and instance paths. The root size is 16px. The frontmatter captures the tree title, body, controls, captions, graph node name, and inspector code roles; there is no separate display typeface.
 
-Node names occupy two lines, followed by a smaller registered type and a UID footer. Full labels remain available through titles and the inspector. Inspector section headings use 14px/650; the selected node name uses 20px/650. Counts, playback time, and zoom percentages use tabular numerals. Keep the original case of source identifiers.
+Nodes show a category icon and a single-line name. Type and UID remain in the hover description and inspector. Full labels remain available through titles and the inspector. Inspector section headings use 14px/650; the selected node name uses 20px/650. Counts, playback time, and zoom percentages use tabular numerals. Keep the original case of source identifiers.
 
-**The Readable Node Rule.** Preserve node name/type sizes and the 16px category, status, and footer text at graph scale. Use Fit tree for the overview and Readable view for inspection.
+**The Readable Node Rule.** Preserve the 24px node name and 28px category icon at graph scale; keep secondary metadata in the inspector. Use Fit tree for the overview and Readable view for inspection.
 
 ## Layout
 
 The current workspace uses a full-width header and main content with 24px horizontal gutters. Its sequence is identity and instance navigation, playback, graph controls and canvas, legend, then collapsed definitions. The graph shares a row with the optional 23rem inspector. Desktop workspace height is `clamp(26rem, calc(100dvh - 350px), 64rem)`.
 
-Graph layout runs top-to-bottom with 360 × 208px nodes, 40px sibling separation, and 80px rank separation. Nodes retain XML traversal order. The canvas has a 20px dot grid. Fit tree is the initial view; user zoom spans 5–200%, while fitting caps at 100%.
+Graph layout runs top-to-bottom with nodes sized to the measured name plus icon, padding, gaps, and optional branch toggle. Widths are clamped to 160–360px and height stays 76px, with 20px sibling separation and 160px rank separation. Nodes retain XML traversal order. The canvas has a 20px dot grid. Fit tree is the initial view; user zoom spans 5–200%, while fitting caps at 100%.
 
 | Maximum width | Implemented adaptation |
 | --- | --- |
@@ -209,25 +204,27 @@ Panels are flat, separated by surface tone and single-pixel borders. No ambient 
 
 ## Shapes
 
-Use the radius roles in frontmatter: small status badges, gently rounded controls, and broader panel corners. Node category borders remain 8px thick; legend category samples use 6px borders. Ordinary panel and control borders are 1px. Icons use the authored 24-unit SVG paths, normally rendered at 20px with a 1.8-unit stroke; node icons render at 16px.
+Graph connections use step paths with square corners.
+
+Use the radius roles in frontmatter: small status badges, gently rounded controls, and broader panel corners. Nodes use a 1px neutral border in the edge color; category icons in the legend remain unframed. Nodes use a neutral outline on hover; selection and RUNNING retain their separate outlines. Ordinary panel and control borders are 1px. Icons use 24-unit SVG paths, normally rendered at 20px with a 1.8-unit stroke. The bundled MDI sitemap outline uses its original filled path without an added stroke; category icons render at 28px in nodes and 20px in the legend.
 
 ## Components
 
 - **Buttons and selects:** shared controls have a 40px minimum height before the mobile adjustment. Primary playback is cobalt; secondary controls are white with a line border; quiet controls are transparent. Hover changes the surface and border; pressed secondary/quiet controls darken their surface. Disabled controls use explicit muted colors. Background and border transitions last 140ms with `ease`; reduced motion removes transitions and animations.
 - **Playback:** a white, bordered fieldset with a compact status heading, transport buttons, labeled timeline, and native speed select. Play becomes Pause while running and Replay at the end. The timeline has a 5px track and round thumb, with three-decimal seconds shown above it. Unavailable playback remains labeled and disabled.
 - **Navigation:** Back and root actions precede horizontally scrollable breadcrumbs. The active breadcrumb has stronger weight and `aria-current`. The exact instance path appears in monospace. A skip link becomes visible on keyboard focus.
-- **Graph nodes:** fixed geometry, a category/status header, two-line name, registered type, and UID footer. Clicking a normal node inspects it; clicking a SubTree opens that exact instance. SubTree has a separate Inspect action for its reference. Enter activates a focused node. The graph is read-only; pan, zoom, selection, and inspection remain available.
-- **Graph controls:** Running path only is a labeled pressed-state toggle with a gold active treatment. Subtree visibility is Collapsed, Running only, or All expanded. Zoom, Readable view, and Fit tree remain directly available. Empty graph states explain the condition and the relevant next action.
-- **Inspector:** white pane with a sticky heading and close action, category/name/status summary, identity pairs, and all XML attributes. Empty strings and missing values retain explicit labels. It scrolls independently; the status follows the playback position.
-- **Legend and definitions:** the legend below the canvas separately explains category borders, statuses, running paths, and selection. Definitions start collapsed and expand into the XML definition table. Help also uses a collapsed disclosure.
+- **Graph nodes:** compact, bounded content widths with one category icon and a single-line name. Icons are split arrows (Control), lightning bolt (Action), checked diamond (Condition), wrapping arrow (Decorator), and mdi-sitemap-outline (SubTree). Unknown is omitted from the legend; unrecognized nodes retain a neutral question-mark fallback and inspector metadata. Clicking any node inspects it. Double-clicking a SubTree or Control with children expands or collapses its branch inline; its plus/minus button and Enter provide the same action. Controls collapse at SUCCESS unless on a recorded RUNNING path; manual choices take priority. Other nodes use Enter for inspection. Inline toggles preserve zoom and pan and anchor the toggled node in place during layout. Fit tree remains explicit; new definitions and bulk visibility changes still fit the overview. Double-click zoom is disabled to avoid conflicting with expansion. The graph is read-only; pan, zoom, selection, and inspection remain available.
+- **Graph controls:** Running path only is a labeled pressed-state toggle with a gold active treatment. Subtree visibility is Collapsed, Running only, or All expanded. Individual subtree toggles show Custom in the selector; choosing a bulk mode clears subtree overrides while preserving Control choices. Zoom, Readable view, and Fit tree remain directly available. Empty graph states explain the condition and the relevant next action.
+- **Inspector:** white pane with a sticky heading and close action, category/name/status summary, identity pairs, and all XML attributes. Empty strings and missing values retain explicit labels. It scrolls independently; the status follows the playback position. SubTree inspection includes an explicit Open subtree separately action for the breadcrumb workflow.
+- **Legend and definitions:** the legend below the canvas separately explains category icons, status fills, running paths, and selection. Definitions start collapsed and expand into the XML definition table. Help also uses a collapsed disclosure.
 - **Notices:** bordered surfaces with wrapping text; errors add a pale red surface, red border, and red text. Loading, recording errors, unavailable recordings, and unmatched UIDs keep their existing status/alert semantics.
 
 ## Do's and Don'ts
 
 ### Do:
-- Do preserve the 360 × 208px node geometry, 8px category borders, and large node typography.
+- Do preserve the 160–360px width limits and 76px node height, thin neutral borders, and large node typography.
 - Do keep playback above the visualization, the legend below it, and definitions collapsed initially.
-- Do retain visible text for category and recorded status, keyboard focus, and accessible names for icon-only controls.
+- Do label every category icon and status fill in the legend; retain exact status text in hover descriptions and the inspector, keyboard focus, and accessible names for icon-only controls.
 - Do preserve exact XML identity, instance paths, and playback position through navigation.
 
 ### Don't:

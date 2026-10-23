@@ -12,6 +12,7 @@ export interface BehaviorTreeFlowNodeData extends Omit<BehaviorTreeNode, 'childr
   registeredType: string
   category: NodeCategory
   idSource: 'uid' | 'fallback'
+  collapsible: boolean
 }
 
 export interface BehaviorTreeFlow {
@@ -46,14 +47,20 @@ export function behaviorTreeToFlow(
     }
 
     const name = node.tag === 'SubTree' ? node.ID || 'SubTree' : node.name || node.tag
+    const category = getNodeCategory(node, nodeModels)
+    const collapsible =
+      node.tag === 'SubTree' ||
+      (category === 'Control' && node.children.some((child) => child.tag !== 'TreeNodesModel'))
     nodes.push({
       id,
       type: 'behavior-tree',
       draggable: false,
-      ariaLabel: `${name}, ${getNodeCategory(node, nodeModels)}, UID ${hasUid ? node._uid : 'not provided'}`,
+      ariaLabel: `${name}, ${category}, UID ${hasUid ? node._uid : 'not provided'}`,
       position: { x: 0, y: 0 },
       class: node.tag === 'SubTree' ? 'subtree-reference' : undefined,
-      domAttributes: node.tag === 'SubTree' ? { title: `Open ${name}` } : undefined,
+      domAttributes: collapsible
+        ? { title: `Double-click to expand or collapse ${name}` }
+        : undefined,
       data: {
         tag: node.tag,
         name: node.name,
@@ -63,7 +70,8 @@ export function behaviorTreeToFlow(
         idSource: hasUid ? 'uid' : 'fallback',
         label: name,
         registeredType: getRegisteredNodeType(node),
-        category: getNodeCategory(node, nodeModels),
+        category,
+        collapsible,
       },
     })
 

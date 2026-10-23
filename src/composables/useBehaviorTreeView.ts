@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, ref, watch, type Ref } from 'vue'
 import type { BehaviorTreeDefinition, NodeCategoryMap } from '@/types/behaviorTree'
 import type { NodeStatusMap } from '@/types/behaviorTreeEvents'
 import {
@@ -16,8 +16,24 @@ export function useBehaviorTreeView(
   nodeModels: Ref<NodeCategoryMap | undefined>,
   statuses: Ref<NodeStatusMap>,
 ) {
+  const context =
+    typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')
+  if (context) {
+    context.font = `700 24px ${getComputedStyle(document.documentElement).fontFamily}`
+  }
+  const measureLabel = context ? (label: string) => context.measureText(label).width : undefined
   const runningPathOnly = ref(false)
   const subtrees = ref<SubtreeVisibility>('hidden')
+  const branchOverrides = ref(new Map<string, boolean>())
+  const layoutAnchorId = ref<string | null>(null)
+  watch(
+    tree,
+    () => {
+      branchOverrides.value.clear()
+      layoutAnchorId.value = null
+    },
+    { flush: 'sync' },
+  )
   const expanded = computed(() => {
     try {
       return {
@@ -29,18 +45,29 @@ export function useBehaviorTreeView(
         nodes: [],
         edges: [],
         warnings: [],
-        subtreeAncestors: new Map<string, readonly string[]>(),
+        branchAncestors: new Map<string, readonly string[]>(),
         error: cause instanceof Error ? cause.message : 'Could not create the tree diagram.',
       }
     }
   })
-  const visible = computed<BehaviorTreeFlow>((previous) => {
-    const next = filterBehaviorTreeFlow(
+  const filtered = computed(() =>
+    filterBehaviorTreeFlow(
       expanded.value,
       statuses.value,
       subtrees.value,
       runningPathOnly.value,
-    )
+      branchOverrides.value,
+    ),
+  )
+  const expandedBranchIds = computed(() => filtered.value.expandedBranchIds)
+  const expandableBranchIds = computed(() => filtered.value.expandableBranchIds)
+  const hasSubtreeOverrides = computed(() =>
+    expanded.value.nodes.some(
+      (node) => node.data?.tag === 'SubTree' && branchOverrides.value.has(node.id),
+    ),
+  )
+  const visible = computed<BehaviorTreeFlow>((previous) => {
+    const next = filtered.value
     // Status changes only trigger layout when the visible structure actually changes.
     if (
       previous &&
@@ -53,14 +80,20 @@ export function useBehaviorTreeView(
       return previous
     return next
   })
-  const graph = computed(() => {
+  const graph = computed<BehaviorTreeFlow & { error: string | null }>((previous) => {
     try {
-      const laidOut = layoutTree(visible.value)
-      const origin = laidOut.nodes[0]?.position
-      // Anchor the root so changing active branches does not move it outside the current view.
-      if (origin) {
+      const laidOut = layoutTree(visible.value, measureLabel)
+      const anchor =
+        laidOut.nodes.find((node) => node.id === layoutAnchorId.value) ?? laidOut.nodes[0]
+      // Keep the toggled node in place without changing the viewport; otherwise anchor the root.
+      if (anchor) {
+        const before = previous?.nodes.find((node) => node.id === anchor.id)?.position ?? {
+          x: 0,
+          y: 0,
+        }
+        const offset = { x: before.x - anchor.position.x, y: before.y - anchor.position.y }
         for (const node of laidOut.nodes) {
-          node.position = { x: node.position.x - origin.x, y: node.position.y - origin.y }
+          node.position = { x: node.position.x + offset.x, y: node.position.y + offset.y }
         }
       }
       return { ...laidOut, error: expanded.value.error }
@@ -75,5 +108,38 @@ export function useBehaviorTreeView(
   })
   const runningPathEdges = computed(() => getRunningPathEdges(expanded.value, statuses.value))
 
-  return { runningPathOnly, subtrees, graph, runningPathEdges }
+  function toggleBranch(id: string) {
+    const node = graph.value.nodes.find((node) => node.id === id)
+    if (!expandableBranchIds.value.has(id) || !node) return
+    layoutAnchorId.value = id
+    const open = !expandedBranchIds.value.has(id)
+    if (
+      node.data?.tag === 'SubTree' &&
+      ((subtrees.value === 'hidden' && !open) || (subtrees.value === 'all' && open))
+    ) {
+      branchOverrides.value.delete(id)
+    } else {
+      branchOverrides.value.set(id, open)
+    }
+  }
+
+  function setSubtreeMode(mode: SubtreeVisibility) {
+    layoutAnchorId.value = null
+    for (const node of expanded.value.nodes) {
+      if (node.data?.tag === 'SubTree') branchOverrides.value.delete(node.id)
+    }
+    subtrees.value = mode
+  }
+
+  return {
+    runningPathOnly,
+    subtrees,
+    graph,
+    runningPathEdges,
+    expandedBranchIds,
+    expandableBranchIds,
+    hasSubtreeOverrides,
+    toggleBranch,
+    setSubtreeMode,
+  }
 }

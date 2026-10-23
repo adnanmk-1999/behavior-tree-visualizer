@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { behaviorTreeToFlow } from '../src/utils/behaviorTreeToFlow.ts'
-import { layoutTree, NODE_HEIGHT, NODE_WIDTH } from '../src/utils/layoutTree.ts'
+import { layoutTree, NODE_HEIGHT, NODE_MIN_WIDTH, NODE_MAX_WIDTH } from '../src/utils/layoutTree.ts'
 
 function node(tag, uid, children = [], attributes = {}) {
   return { tag, name: tag, _uid: uid, ID: attributes.ID, attributes, children }
@@ -48,7 +48,7 @@ test('conversion preserves preorder, metadata and every parent-child edge withou
   )
   assert.equal(flow.nodes[4].data.attributes._fullpath, 'MissionBody::5')
   assert.equal(flow.nodes[4].class, 'subtree-reference')
-  assert.equal(flow.nodes[4].domAttributes.title, 'Open MissionBody')
+  assert.equal(flow.nodes[4].domAttributes.title, 'Double-click to expand or collapse MissionBody')
   assert.equal(flow.nodes[1].class, undefined)
   assert.ok(flow.nodes.every((n) => n.data.idSource === 'uid'))
   assert.deepEqual(flow.warnings, [])
@@ -145,14 +145,14 @@ test('Dagre positions are deterministic, top-down, non-overlapping and retain XM
     input.nodes.map((n) => n.id),
   )
   for (const n of result.nodes) {
-    assert.equal(n.width, NODE_WIDTH)
+    assert.ok(n.width >= NODE_MIN_WIDTH && n.width <= NODE_MAX_WIDTH)
     assert.equal(n.height, NODE_HEIGHT)
     assert.equal(n.sourcePosition, 'bottom')
     assert.equal(n.targetPosition, 'top')
     assert.ok(Number.isFinite(n.position.x) && Number.isFinite(n.position.y))
     const children = result.edges.filter((e) => e.source === n.id).map((e) => byId.get(e.target))
     children.forEach((child, index) => {
-      assert.ok(child.position.y >= n.position.y + NODE_HEIGHT)
+      assert.ok(child.position.y >= n.position.y + NODE_HEIGHT + 160)
       if (index > 0) assert.ok(child.position.x > children[index - 1].position.x)
     })
   }
@@ -160,8 +160,10 @@ test('Dagre positions are deterministic, top-down, non-overlapping and retain XM
     for (const other of result.nodes.slice(i + 1)) {
       const current = result.nodes[i]
       assert.ok(
-        Math.abs(current.position.x - other.position.x) >= NODE_WIDTH ||
-          Math.abs(current.position.y - other.position.y) >= NODE_HEIGHT,
+        current.position.x + current.width <= other.position.x ||
+          other.position.x + other.width <= current.position.x ||
+          current.position.y + current.height <= other.position.y ||
+          other.position.y + other.height <= current.position.y,
         `${current.id} overlaps ${other.id}`,
       )
     }
@@ -169,4 +171,49 @@ test('Dagre positions are deterministic, top-down, non-overlapping and retain XM
   const single = layoutTree(behaviorTreeToFlow(tree([node('Action', '0')]))).nodes[0]
   assert.deepEqual(single.position, { x: 0, y: 0 }, 'Dagre centers must become top-left positions')
   assert.deepEqual(layoutTree(behaviorTreeToFlow(tree([]))).nodes, [])
+})
+
+test('node widths follow measured glyphs, reserve subtree controls, and clamp long or empty names', () => {
+  const input = behaviorTreeToFlow(
+    tree([
+      node('Action', '1', [], { ID: 'Test' }),
+      node('Action', '2'),
+      node('SubTree', '3', [], { ID: 'WWWWW' }),
+      node('Action', '4'),
+      node('Action', '5'),
+    ]),
+  )
+  const labels = ['iiiii', 'WWWWW', 'WWWWW', 'A very long name', '']
+  input.nodes.forEach((n, index) => {
+    n.data.label = labels[index]
+  })
+  const measurements = new Map([
+    ['iiiii', 30],
+    ['WWWWW', 150.25],
+    ['A very long name', 800],
+    ['', 0],
+  ])
+  const before = structuredClone(input)
+  const result = layoutTree(input, (label) => measurements.get(label))
+  const [narrow, wide, subtree, long, empty] = result.nodes
+  assert.equal(narrow.width, NODE_MIN_WIDTH)
+  assert.ok(wide.width > narrow.width, 'Equal-length names must use their glyph widths')
+  assert.ok(wide.width - 74 >= measurements.get('WWWWW'), 'Label must fit after rounding')
+  assert.equal(subtree.width - wide.width, 46, 'SubTree toggle button and gap need space')
+  assert.equal(long.width, NODE_MAX_WIDTH)
+  assert.equal(empty.width, NODE_MIN_WIDTH)
+  const withoutMetadata = layoutTree({
+    nodes: [{ id: '42', position: { x: 0, y: 0 } }],
+    edges: [],
+    warnings: [],
+  })
+  assert.equal(withoutMetadata.nodes[0].width, NODE_MIN_WIDTH)
+  assert.equal(new Set(result.nodes.map((n) => n.width)).size, 4)
+  assert.deepEqual(input, before)
+  assert.deepEqual(result.edges, input.edges)
+  for (let i = 1; i < result.nodes.length; i++) {
+    const previous = result.nodes[i - 1]
+    const current = result.nodes[i]
+    assert.equal(current.position.x - previous.position.x - previous.width, 20)
+  }
 })

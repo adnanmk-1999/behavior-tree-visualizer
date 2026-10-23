@@ -6,7 +6,7 @@ import type { DisplayStatus } from '@/types/behaviorTreeEvents'
 withDefaults(defineProps<{ node: BehaviorTreeFlowNodeData; status?: DisplayStatus }>(), {
   status: 'UNOBSERVED',
 })
-defineEmits<{ close: [] }>()
+defineEmits<{ close: []; openSubtree: [] }>()
 </script>
 
 <template>
@@ -33,6 +33,14 @@ defineEmits<{ close: [] }>()
           }}</span>
           <span>at playback position</span>
         </div>
+        <button
+          v-if="node.tag === 'SubTree'"
+          type="button"
+          class="ui-button"
+          @click="$emit('openSubtree')"
+        >
+          <AppIcon name="tree" /> Open subtree separately
+        </button>
       </div>
       <h4>Node identity</h4>
       <dl class="details">

@@ -1,26 +1,32 @@
 <script setup lang="ts">
 import { NODE_CATEGORIES } from '@/types/behaviorTree'
 import { EXECUTION_STATUSES } from '@/types/behaviorTreeEvents'
+import NodeCategoryIcon from '@/components/NodeCategoryIcon.vue'
+
+const categories = NODE_CATEGORIES.filter((category) => category !== 'Unknown')
 </script>
 
 <template>
   <aside class="graph-legend" aria-label="Graph legend">
     <h3>Legend</h3>
     <div class="legend-group">
-      <h4>Category borders</h4>
+      <h4>Category icons</h4>
       <ul>
-        <li v-for="category in NODE_CATEGORIES" :key="category" :data-category="category">
-          <span class="category-sample" aria-hidden="true"></span>{{ category }}
+        <li v-for="category in categories" :key="category" :data-category="category">
+          <NodeCategoryIcon :category="category" aria-hidden="true" />{{ category }}
         </li>
       </ul>
     </div>
     <div class="legend-group">
-      <h4>Recorded status</h4>
+      <h4>Recorded status · node fill</h4>
       <ul>
         <li v-for="status in [...EXECUTION_STATUSES, 'UNOBSERVED']" :key="status">
-          <span class="execution-status" :data-status="status">{{
-            status === 'UNOBSERVED' ? 'Not observed' : status
-          }}</span>
+          <span
+            class="status-sample node-status-surface"
+            :data-status="status"
+            aria-hidden="true"
+          ></span>
+          {{ status === 'UNOBSERVED' ? 'Not observed' : status }}
         </li>
       </ul>
     </div>
@@ -28,8 +34,10 @@ import { EXECUTION_STATUSES } from '@/types/behaviorTreeEvents'
       <span><span class="path-sample" aria-hidden="true"></span>Path to a RUNNING node</span>
       <span><span class="selection-sample" aria-hidden="true"></span>Selected node</span>
       <p>
-        Ancestors keep their own recorded status. Not observed means no transition yet at this
-        playback time.
+        Double-click a SubTree or Control with children to expand or collapse it. Plus shows hidden
+        contents; minus hides them. Successful Controls collapse by default, except on a RUNNING
+        path. Hover or inspect for exact status and UID. Not observed means no transition yet;
+        hidden children retain their recorded statuses.
       </p>
     </div>
   </aside>
@@ -79,18 +87,18 @@ li {
   align-items: center;
   gap: 0.375rem;
 }
-.category-sample {
-  flex-shrink: 0;
-  width: 26px;
-  height: 22px;
-  border: 6px solid var(--category-color);
-  border-radius: 4px;
-  background: var(--surface);
+.category-icon {
+  width: 20px;
+  height: 20px;
 }
-.execution-status {
-  font-size: 0.75rem;
-  line-height: 1.5;
-  padding: 0.125rem 0.375rem;
+.status-sample {
+  width: 26px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.status-sample[data-status='RUNNING'] {
+  box-shadow: inset 0 0 0 2px #a16207;
 }
 .legend-notes {
   grid-column: 2 / -1;
@@ -113,7 +121,6 @@ li {
 .selection-sample {
   width: 20px;
   height: 14px;
-  border: 1px solid var(--line);
   border-radius: 2px;
   outline: 2px solid #172033;
   outline-offset: 2px;

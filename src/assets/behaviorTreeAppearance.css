@@ -17,39 +17,52 @@
   --category-color: #475569;
 }
 
+[data-status] {
+  --status-background: #fff;
+  --status-border: transparent;
+  --status-text: #475569;
+}
+[data-status='RUNNING'] {
+  --status-background: #facc15;
+  --status-border: #a16207;
+  --status-text: #422006;
+}
+[data-status='SUCCESS'] {
+  --status-background: #dcfce7;
+  --status-border: #16a34a;
+  --status-text: #166534;
+}
+[data-status='FAILURE'] {
+  --status-background: #fee2e2;
+  --status-border: #dc2626;
+  --status-text: #991b1b;
+}
+[data-status='IDLE'] {
+  --status-background: #f1f5f9;
+  --status-border: #94a3b8;
+  --status-text: #475569;
+}
+[data-status='SKIPPED'] {
+  --status-background: #fafafa;
+  --status-border: #d4d4d4;
+  --status-text: #525252;
+}
+
+.node-status-surface {
+  background: var(--status-background);
+}
+.node-status-surface[data-status='RUNNING'] {
+  background: #fffbeb;
+}
+
 .execution-status {
   flex-shrink: 0;
-  border: 1px solid transparent;
+  border: 1px solid var(--status-border);
   border-radius: 3px;
   padding: 2px 6px;
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
-  color: #475569;
-}
-
-.execution-status[data-status='RUNNING'] {
-  background: #facc15;
-  border-color: #a16207;
-  color: #422006;
-}
-.execution-status[data-status='SUCCESS'] {
-  background: #dcfce7;
-  border-color: #16a34a;
-  color: #166534;
-}
-.execution-status[data-status='FAILURE'] {
-  background: #fee2e2;
-  border-color: #dc2626;
-  color: #991b1b;
-}
-.execution-status[data-status='IDLE'] {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-  color: #475569;
-}
-.execution-status[data-status='SKIPPED'] {
-  background: #fafafa;
-  border-color: #d4d4d4;
-  color: #525252;
+  background: var(--status-background);
+  color: var(--status-text);
 }

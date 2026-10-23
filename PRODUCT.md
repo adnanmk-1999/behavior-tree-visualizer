@@ -29,10 +29,11 @@ GitHub Pages deployment is prepared. Publishing is handled by the user.
 - Preserve XML hierarchy, instance paths, node UIDs, attributes, and event ordering.
 - Read-only graph: pan, zoom, select, inspect, and navigate; no editing or execution.
 - Play, pause, reset, seek, and choose playback speed without resetting on navigation.
-- Filter running paths and optionally expand all or running subtree contents.
+- Filter running paths and expand subtree contents individually by double-click, plus/minus button, or Enter, or use all/running modes. Single-click inspects; separate subtree views remain an explicit inspector action.
+- Controls with children use the same expand/collapse actions. SUCCESS hides their children by default, except on a recorded RUNNING path; manual choices take priority without changing statuses.
 - Fit tree is the default. Playback controls sit above the visualization.
 - The legend sits below the visualization. Definitions are collapsed by default.
-- Preserve large node typography, thick category-colored borders, and distinct status badges.
+- Preserve large node typography, category icons, thin neutral node borders, and distinct status fills, with details in the inspector.
 - No live ROS, backend, new playback features, or fabricated recording data.
 
 ## Evidence on Hand

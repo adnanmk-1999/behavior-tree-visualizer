@@ -10,7 +10,12 @@
     <script type="module">
       import { parseBehaviorTree } from '/src/utils/parseBehaviorTree.ts'
       import { behaviorTreeToFlow } from '/src/utils/behaviorTreeToFlow.ts'
-      import { layoutTree, NODE_HEIGHT, NODE_WIDTH } from '/src/utils/layoutTree.ts'
+      import {
+        layoutTree,
+        NODE_HEIGHT,
+        NODE_MIN_WIDTH,
+        NODE_MAX_WIDTH,
+      } from '/src/utils/layoutTree.ts'
       import { resolveSubTree } from '/src/utils/resolveSubTree.ts'
       import { getNodeCategory } from '/src/utils/getNodeCategory.ts'
 
@@ -141,6 +146,10 @@
           const sourceNodes = flatten(tree.children)
           graph.nodes.forEach((node, index) => {
             assert(node.type === 'behavior-tree', 'Custom node renderer is missing')
+            assert(
+              node.width >= NODE_MIN_WIDTH && node.width <= NODE_MAX_WIDTH,
+              'Node width is outside bounds',
+            )
             assert(node.id === sourceNodes[index]._uid, 'Custom node UID changed')
             assert(
               JSON.stringify(node.data.attributes) ===
@@ -149,8 +158,10 @@
             )
             for (const other of graph.nodes.slice(index + 1)) {
               assert(
-                Math.abs(node.position.x - other.position.x) >= NODE_WIDTH ||
-                  Math.abs(node.position.y - other.position.y) >= NODE_HEIGHT,
+                node.position.x + node.width <= other.position.x ||
+                  other.position.x + other.width <= node.position.x ||
+                  node.position.y + node.height <= other.position.y ||
+                  other.position.y + other.height <= node.position.y,
                 `${tree.ID}: nodes overlap`,
               )
             }
@@ -179,8 +190,10 @@
         flow.nodes.forEach((node, index) => {
           for (const other of flow.nodes.slice(index + 1)) {
             assert(
-              Math.abs(node.position.x - other.position.x) >= NODE_WIDTH ||
-                Math.abs(node.position.y - other.position.y) >= NODE_HEIGHT,
+              node.position.x + node.width <= other.position.x ||
+                other.position.x + other.width <= node.position.x ||
+                node.position.y + node.height <= other.position.y ||
+                other.position.y + other.height <= node.position.y,
               `Nodes ${node.id} and ${other.id} overlap`,
             )
           }

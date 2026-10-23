@@ -10,7 +10,7 @@ import BehaviorTreeNodeView from '@/components/BehaviorTreeNode.vue'
 import BehaviorTreeLegend from '@/components/BehaviorTreeLegend.vue'
 import NodeInspector from '@/components/NodeInspector.vue'
 import AppIcon from '@/components/AppIcon.vue'
-import { NODE_WIDTH } from '@/utils/layoutTree'
+import { NODE_MAX_WIDTH } from '@/utils/layoutTree'
 import { getNodeStatus } from '@/utils/playbackState'
 import { useBehaviorTreeView } from '@/composables/useBehaviorTreeView'
 import type { SubtreeVisibility } from '@/utils/expandBehaviorTreeFlow'
@@ -42,7 +42,17 @@ const {
   removeSelectedNodes,
 } = useVueFlow()
 const selectedNodeId = ref<string | null>(null)
-const { graph, runningPathOnly, subtrees, runningPathEdges } = useBehaviorTreeView(
+const {
+  graph,
+  runningPathOnly,
+  subtrees,
+  runningPathEdges,
+  expandedBranchIds,
+  expandableBranchIds,
+  hasSubtreeOverrides,
+  toggleBranch,
+  setSubtreeMode,
+} = useBehaviorTreeView(
   toRef(props, 'tree'),
   toRef(props, 'definitions'),
   toRef(props, 'nodeModels'),
@@ -71,9 +81,9 @@ async function changeView(change: () => void) {
 }
 
 function setSubtrees(mode: SubtreeVisibility) {
-  if (subtrees.value === mode) return
+  if (subtrees.value === mode && !hasSubtreeOverrides.value) return
   return changeView(() => {
-    subtrees.value = mode
+    setSubtreeMode(mode)
   })
 }
 
@@ -84,6 +94,7 @@ const selectedNode = computed(
 const displayEdges = computed(() =>
   graph.value.edges.map((edge) => ({
     ...edge,
+    type: 'step',
     // Vue Flow evaluates this callback reactively without rebuilding edge geometry.
     class: () => (runningPathEdges.value.has(edge.id) ? 'running-path' : ''),
   })),
@@ -114,9 +125,10 @@ function fitTree() {
 function readableView() {
   const root = graph.value.nodes[0]
   if (!root) return
-  const zoom = Math.min(1, Math.max(0.05, (dimensions.value.width - 32) / NODE_WIDTH))
+  const width = findNode(root.id)?.dimensions.width || NODE_MAX_WIDTH
+  const zoom = Math.min(1, Math.max(0.05, (dimensions.value.width - 32) / width))
   return setViewport({
-    x: dimensions.value.width / 2 - (root.position.x + NODE_WIDTH / 2) * zoom,
+    x: dimensions.value.width / 2 - (root.position.x + width / 2) * zoom,
     y: 24 - root.position.y * zoom,
     zoom,
   })
@@ -143,14 +155,24 @@ function onGraphFocus(event: FocusEvent) {
   }
 }
 
-function openNode(id: string) {
+function activateNode(id: string) {
   const data = graph.value.nodes.find((node) => node.id === id)?.data
-  if (data?.tag === 'SubTree') emit('openSubtree', data)
+  if (expandableBranchIds.value.has(id)) toggleInlineBranch(id)
   else if (data) inspectNode(id)
 }
 
 function onNodeClick({ node }: NodeMouseEvent) {
-  openNode(node.id)
+  inspectNode(node.id)
+}
+
+function toggleInlineBranch(id: string) {
+  if (!expandableBranchIds.value.has(id)) return
+  pendingView = false
+  toggleBranch(id)
+}
+
+function onNodeDoubleClick({ node }: NodeMouseEvent) {
+  toggleInlineBranch(node.id)
 }
 
 function onGraphKeydown(event: KeyboardEvent) {
@@ -158,7 +180,7 @@ function onGraphKeydown(event: KeyboardEvent) {
   const node = event.target.closest('.vue-flow__node')
   if (node) {
     event.preventDefault()
-    openNode(node.getAttribute('data-id') ?? '')
+    activateNode(node.getAttribute('data-id') ?? '')
   }
 }
 
@@ -204,9 +226,10 @@ watch(
             Subtrees
             <select
               class="ui-select"
-              :value="subtrees"
+              :value="hasSubtreeOverrides ? 'custom' : subtrees"
               @change="setSubtrees(($event.target as HTMLSelectElement).value as SubtreeVisibility)"
             >
+              <option v-if="hasSubtreeOverrides" value="custom" disabled>Custom</option>
               <option value="hidden">Collapsed</option>
               <option value="running">Running only</option>
               <option value="all">All expanded</option>
@@ -272,7 +295,9 @@ watch(
               :elements-selectable="true"
               :min-zoom="0.05"
               :max-zoom="2"
+              :zoom-on-double-click="false"
               @node-click="onNodeClick"
+              @node-double-click="onNodeDoubleClick"
               @pane-click="closeInspector"
             >
               <template #node-behavior-tree="nodeProps">
@@ -280,7 +305,9 @@ watch(
                   :data="nodeProps.data"
                   :selected="nodeProps.selected"
                   :status="getNodeStatus(props.statuses, nodeProps.data._uid)"
-                  @inspect="inspectNode(nodeProps.id)"
+                  :expanded="expandedBranchIds.has(nodeProps.id)"
+                  :expandable="expandableBranchIds.has(nodeProps.id)"
+                  @toggle-branch="toggleInlineBranch(nodeProps.id)"
                 />
               </template>
             </VueFlow>
@@ -296,10 +323,13 @@ watch(
             <details class="graph-help">
               <summary><AppIcon name="info" /> How to explore</summary>
               <p>
-                Click a node to inspect its attributes and recorded status. Click a folder node to
-                open its subtree; use its Inspect button to inspect the reference instead. Keyboard:
-                focus a node and press Enter. Fit tree shows the overview; Readable view zooms in at
-                the root. Subtree contents start collapsed.
+                Click any node to inspect it. Double-click a SubTree or a Control with children to
+                expand or collapse its branch, use its plus/minus button, or focus it and press
+                Enter. Successful Controls collapse automatically unless they lead to a RUNNING
+                node; manual choices take priority. The inspector can open a subtree separately.
+                Expanding or collapsing keeps your zoom and the toggled node in place. Choosing a
+                Subtrees mode resets only subtree toggles; Running path only still filters what is
+                visible. Fit tree shows the overview; Readable view zooms in at the root.
               </p>
             </details>
           </div>
@@ -310,6 +340,7 @@ watch(
           :node="selectedNode"
           :status="getNodeStatus(props.statuses, selectedNode._uid)"
           @close="closeInspector"
+          @open-subtree="emit('openSubtree', selectedNode)"
         />
       </div>
     </section>

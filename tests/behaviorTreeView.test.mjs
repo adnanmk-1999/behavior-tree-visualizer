@@ -47,7 +47,7 @@ test('inline expansion preserves exact instances, UIDs, attributes and original 
   assert.ok(full.edges.some((e) => e.source === '2' && e.target === '10'))
   assert.ok(full.edges.some((e) => e.source === '3' && e.target === '20'))
   assert.ok(full.edges.some((e) => e.source === '12' && e.target === '30'))
-  assert.deepEqual(full.subtreeAncestors.get('30'), ['2', '12'])
+  assert.deepEqual(full.branchAncestors.get('30'), ['1', '2', '10', '12'])
   assert.equal(full.nodes.find((n) => n.id === '3').data.attributes._fullpath, 'B')
   assert.ok(full.nodes.every((n) => n.draggable === false))
   assert.deepEqual(definitions, before)
@@ -64,6 +64,248 @@ test('subtrees start collapsed, show all on request, and can be collapsed again'
     const visibleIds = new Set(ids(visible))
     assert.ok(visible.edges.every((e) => visibleIds.has(e.source) && visibleIds.has(e.target)))
   }
+})
+
+test('individual expansion preserves exact instances, nested choices, and visible connections', () => {
+  const { root, definitions } = fixture()
+  const full = expandBehaviorTreeFlow(root, definitions)
+  const before = structuredClone(full)
+  const overrides = new Map([['2', true]])
+  const visible = () => filterBehaviorTreeFlow(full, new Map(), 'hidden', false, overrides)
+  assert.deepEqual(ids(visible()), ['1', '2', '3', '4', '10', '11', '12'])
+  assert.ok(!ids(visible()).includes('20'), 'Same-named instance B must remain collapsed')
+  assert.ok(visible().edges.some((e) => e.source === '2' && e.target === '10'))
+  overrides.set('12', true)
+  assert.ok(ids(visible()).includes('30'))
+  overrides.set('2', false)
+  assert.deepEqual(ids(visible()), ['1', '2', '3', '4'])
+  overrides.set('2', true)
+  const restored = visible()
+  assert.ok(ids(restored).includes('30'), 'Nested toggle survives closing its ancestor')
+  const visibleIds = new Set(ids(restored))
+  assert.ok(restored.edges.every((e) => visibleIds.has(e.source) && visibleIds.has(e.target)))
+  assert.deepEqual(full, before)
+})
+
+test('manual toggles override bulk modes while the running-path filter remains independent', () => {
+  const { root, definitions } = fixture()
+  const full = expandBehaviorTreeFlow(root, definitions)
+  const statuses = new Map([['30', 'RUNNING']])
+  const overrides = new Map([
+    ['2', false],
+    ['3', true],
+  ])
+  const all = filterBehaviorTreeFlow(full, statuses, 'all', false, overrides)
+  assert.deepEqual(ids(all), ['1', '2', '3', '4', '20', '21'])
+  const running = filterBehaviorTreeFlow(full, statuses, 'running', false, overrides)
+  assert.deepEqual(ids(running), ids(all))
+  const path = filterBehaviorTreeFlow(full, statuses, 'running', true, overrides)
+  assert.deepEqual(ids(path), ['1', '2'])
+  assert.ok(path.expandedBranchIds.has('3'), 'Expansion state is independent of path filtering')
+  assert.ok(!path.expandedBranchIds.has('2'))
+})
+
+test('view toggles stay inline, cache unchanged layouts, and bulk modes reset overrides', () => {
+  const { root, definitions } = fixture()
+  const tree = shallowRef(root)
+  const statuses = shallowRef(new Map())
+  const view = useBehaviorTreeView(tree, shallowRef(definitions), shallowRef(undefined), statuses)
+  const original = view.graph.value
+  view.toggleBranch('4') // Leaf Controls have no branch to toggle.
+  view.toggleBranch('missing')
+  view.toggleBranch('12') // A reference hidden under a collapsed ancestor cannot be clicked.
+  assert.equal(view.graph.value, original)
+  view.toggleBranch('2')
+  assert.equal(tree.value, root, 'Inline expansion must not navigate to another definition')
+  assert.ok(view.expandedBranchIds.value.has('2'))
+  assert.ok(view.hasSubtreeOverrides.value)
+  const open = view.graph.value
+  statuses.value = new Map([['10', 'RUNNING']])
+  assert.equal(view.graph.value, open, 'Status-only changes retain layout')
+  view.toggleBranch('12')
+  assert.ok(ids(view.graph.value).includes('30'))
+  view.toggleBranch('2')
+  assert.deepEqual(ids(view.graph.value), ['1', '2', '3', '4'])
+  view.toggleBranch('2')
+  assert.ok(ids(view.graph.value).includes('30'))
+  view.setSubtreeMode('hidden')
+  assert.equal(view.hasSubtreeOverrides.value, false)
+  assert.deepEqual(ids(view.graph.value), ['1', '2', '3', '4'])
+  view.setSubtreeMode('all')
+  view.toggleBranch('2')
+  assert.ok(!ids(view.graph.value).includes('10'))
+  view.toggleBranch('2')
+  assert.equal(view.hasSubtreeOverrides.value, false)
+  view.toggleBranch('2')
+  view.setSubtreeMode('all')
+  assert.ok(ids(view.graph.value).includes('10'), 'Choosing the current bulk mode resets overrides')
+  view.toggleBranch('2')
+  tree.value = definitions[1]
+  assert.equal(
+    view.hasSubtreeOverrides.value,
+    false,
+    'Changing definitions clears manual overrides',
+  )
+})
+
+test('unresolved or empty references cannot pretend to expand', () => {
+  const empty = definition('Empty', 'empty', [])
+  const root = definition('RobotTree', '', [
+    reference('1', empty),
+    reference('2', definition('Missing', 'missing', [])),
+  ])
+  const view = useBehaviorTreeView(
+    shallowRef(root),
+    shallowRef([root, empty]),
+    shallowRef(undefined),
+    shallowRef(new Map()),
+  )
+  const before = view.graph.value
+  view.toggleBranch('1')
+  view.toggleBranch('2')
+  assert.equal(view.graph.value, before)
+  assert.equal(view.hasSubtreeOverrides.value, false)
+  assert.equal(view.expandableBranchIds.value.size, 0)
+  assert.match(view.graph.value.warnings.join('\n'), /Could not resolve/)
+})
+
+test('inline toggles anchor the clicked node through layout changes without needing a viewport move', () => {
+  const { root, definitions } = fixture()
+  const view = useBehaviorTreeView(
+    shallowRef(root),
+    shallowRef(definitions),
+    shallowRef(undefined),
+    shallowRef(new Map()),
+  )
+  for (const id of ['2', '12', '10', '10', '2', '2', '3', '3', '1', '1']) {
+    const before = view.graph.value.nodes.find((n) => n.id === id)
+    view.toggleBranch(id)
+    const after = view.graph.value.nodes.find((n) => n.id === id)
+    assert.deepEqual(after.position, before.position, `Toggling ${id} must not move its anchor`)
+    assert.equal(after.width, before.width)
+    for (const zoom of [0.2, 0.75, 1.5]) {
+      const screenPosition = (node) => ({
+        x: -125 + node.position.x * zoom,
+        y: 63 + node.position.y * zoom,
+      })
+      assert.deepEqual(screenPosition(after), screenPosition(before), 'Same pan/zoom keeps focus')
+    }
+    const nodes = view.graph.value.nodes
+    for (let i = 0; i < nodes.length; i++) {
+      for (const b of nodes.slice(i + 1)) {
+        const a = nodes[i]
+        assert.ok(
+          a.position.x + a.width <= b.position.x ||
+            b.position.x + b.width <= a.position.x ||
+            a.position.y + a.height <= b.position.y ||
+            b.position.y + b.height <= a.position.y,
+          `Anchored nodes ${a.id} and ${b.id} overlap`,
+        )
+      }
+    }
+  }
+})
+
+test('successful Controls hide descendants by default and seeking restores earlier visibility', () => {
+  const { root, definitions } = fixture()
+  const full = expandBehaviorTreeFlow(root, definitions)
+  const { events } = recording([
+    [0, '10', 'RUNNING'],
+    [10, '10', 'SUCCESS'],
+    [20, '10', 'IDLE'],
+    [30, '10', 'FAILURE'],
+    [40, '10', 'SKIPPED'],
+  ])
+  for (const time of [0, 10, 20, 30, 40, 10, 0]) {
+    const statuses = reconstructPlayback(events, time).statuses
+    const before = new Map(statuses)
+    const visible = filterBehaviorTreeFlow(full, statuses, 'all', false)
+    assert.ok(ids(visible).includes('10'), 'The successful parent stays visible')
+    for (const child of ['11', '12', '30']) {
+      assert.equal(ids(visible).includes(child), time !== 10)
+    }
+    const visibleIds = new Set(ids(visible))
+    assert.ok(visible.edges.every((e) => visibleIds.has(e.source) && visibleIds.has(e.target)))
+    assert.deepEqual(statuses, before, 'Folding must not change recorded execution statuses')
+  }
+  assert.deepEqual(
+    ids(filterBehaviorTreeFlow(full, new Map([['1', 'SUCCESS']]), 'all', false)),
+    ['1'],
+    'A successful root remains available for reopening',
+  )
+})
+
+test('Control toggles preserve nested choices and take priority over playback defaults', () => {
+  const { root, definitions } = fixture()
+  const statuses = shallowRef(new Map([['10', 'SUCCESS']]))
+  const tree = shallowRef(root)
+  const view = useBehaviorTreeView(tree, shallowRef(definitions), shallowRef(undefined), statuses)
+  view.setSubtreeMode('all')
+  assert.ok(!ids(view.graph.value).includes('11'))
+  const closed = view.graph.value.nodes.find((n) => n.id === '10')
+  view.toggleBranch('10')
+  assert.ok(ids(view.graph.value).includes('30'))
+  assert.equal(
+    view.hasSubtreeOverrides.value,
+    false,
+    'Control choices are separate from Subtrees mode',
+  )
+  const opened = view.graph.value
+  assert.equal(opened.nodes.find((n) => n.id === '10').width, closed.width)
+  statuses.value = new Map([['10', 'RUNNING']])
+  assert.equal(view.graph.value, opened)
+  statuses.value = new Map([['10', 'SUCCESS']])
+  assert.equal(view.graph.value, opened, 'A manually opened branch stays open at SUCCESS')
+  view.toggleBranch('1')
+  assert.deepEqual(ids(view.graph.value), ['1'])
+  view.toggleBranch('1')
+  assert.ok(
+    ids(view.graph.value).includes('30'),
+    'Nested choices survive closing a Control ancestor',
+  )
+  view.setSubtreeMode('hidden')
+  view.setSubtreeMode('all')
+  assert.ok(ids(view.graph.value).includes('30'), 'Subtrees mode does not reset Control choices')
+  view.toggleBranch('10')
+  statuses.value = new Map([['10', 'FAILURE']])
+  assert.ok(!ids(view.graph.value).includes('11'), 'Manual closing also takes priority')
+  tree.value = definitions[1]
+  assert.ok(ids(view.graph.value).includes('11'), 'Changing trees resets Control choices')
+})
+
+test('automatic folding keeps RUNNING descendants visible without inferring ancestor status', () => {
+  const { root, definitions } = fixture()
+  const full = expandBehaviorTreeFlow(root, definitions)
+  const statuses = new Map([
+    ['10', 'SUCCESS'],
+    ['30', 'RUNNING'],
+  ])
+  for (const onlyRunning of [false, true]) {
+    assert.ok(ids(filterBehaviorTreeFlow(full, statuses, 'running', onlyRunning)).includes('30'))
+  }
+  statuses.set('30', 'IDLE')
+  assert.ok(!ids(filterBehaviorTreeFlow(full, statuses, 'all', false)).includes('30'))
+  assert.equal(statuses.get('10'), 'SUCCESS')
+})
+
+test('only registered Controls with execution children gain a child toggle', () => {
+  const root = definition('RobotTree', '', [
+    { ...node('1', [node('2')]), tag: 'Sequence' },
+    { ...node('3', [node('4')]), tag: 'RobotControl' },
+    { ...node('5', [node('6')]), tag: 'Action' },
+    { ...node('7', [node('8')]), tag: 'Condition' },
+    { ...node('9', [node('10')]), tag: 'ForceSuccess' },
+    { ...node('11', [node('12')]), tag: 'Unregistered' },
+    node('13'),
+  ])
+  const full = expandBehaviorTreeFlow(root, [root], { Sequence: 'Action', RobotControl: 'Control' })
+  const statuses = new Map(full.nodes.map((node) => [node.id, 'SUCCESS']))
+  const visible = filterBehaviorTreeFlow(full, statuses, 'all', false)
+  assert.deepEqual([...visible.expandableBranchIds], ['3'])
+  assert.deepEqual(
+    ids(visible),
+    ids(full).filter((id) => id !== '4'),
+  )
 })
 
 test('running subtrees expand through active descendants without inventing reference statuses', () => {

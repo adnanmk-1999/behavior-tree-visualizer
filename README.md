@@ -2,8 +2,9 @@
 
 A Vue 3 and TypeScript Behavior Tree Visualizer. It loads the real
 `public/tree.xml` file and displays `RobotTree` as a read-only Vue Flow graph.
-Click SubTree nodes to explore their exact definitions, then use breadcrumbs,
-Back, or Return to RobotTree to move through the navigation history.
+Click nodes to inspect them; double-click SubTrees or Controls with children to
+expand or collapse them inline. The inspector can open a subtree separately,
+with breadcrumbs, Back, and Return to RobotTree for navigation.
 The playback timeline loads the exported recording and shows each node's recorded
 execution status at the selected time.
 
@@ -51,12 +52,18 @@ these IDs cannot match recordings. Any duplicate ID, including a collision betwe
 a UID and a fallback ID, throws a visible error. SubTree references remain leaves
 and display the referenced tree ID. There is no synthetic root.
 
-`layoutTree(flow)` uses `@dagrejs/dagre` for a top-down layout with fixed 360 × 208
-pixel nodes, 40 pixel horizontal spacing, and 80 pixel vertical spacing. XML
+`layoutTree(flow, measureLabel)` uses `@dagrejs/dagre` for a top-down layout with
+160–360 pixel node widths, a fixed 76 pixel height, 20 pixel horizontal spacing,
+and 160 pixel vertical spacing. The viewer measures names in the actual 24px bold
+font using a canvas, reserving space for the category icon and SubTree expand/collapse
+button. The pure layout utility uses a deterministic text-width estimate when no
+measurement callback is supplied. Long names truncate at the maximum width;
+full names remain available on hover and in the inspector. XML
 sibling order is retained. The reusable `BehaviorTreeViewer` accepts a `tree`
 prop, the document's `definitions`, and an optional `nodeModels` category map. It updates and resets its view when the definition changes,
 and uses custom Behavior Tree nodes. Pan, zoom, and selection remain available; dragging, connecting,
-reconnecting, and keyboard deletion are disabled.
+reconnecting, and keyboard deletion are disabled. Connections use Vue Flow's
+`step` style, including connections into expanded subtrees.
 
 Run `npm test` for conversion/layout checks using Node's built-in test runner,
 `npm run type-check`, `npm run lint`, and `npm run build`. The browser check at
@@ -80,10 +87,12 @@ resets history to RobotTree. Breadcrumbs truncate the stack; clicking the curren
 breadcrumb leaves the graph unchanged. Repeated IDs include their full instance
 path in breadcrumb labels, and the current instance path is shown above the graph.
 
-The viewer emits `open-subtree` on SubTree clicks (or Enter on a focused SubTree),
-including the original ID, UID, and attributes. Other node clicks select and inspect.
-SubTrees have solid slate borders, a folder icon, an Open subtree label, a pointer cursor,
-and an Open tooltip. Trees open in **Fit tree** view, showing the whole-tree overview.
+Single-click any node, including a SubTree, to inspect it. Double-click a SubTree or Control with children
+(or focus it and press Enter) to expand or collapse that exact instance inline.
+Its plus/minus button provides the same action for keyboard and touch use.
+The inspector's **Open subtree separately** action explicitly emits `open-subtree`,
+including the original ID, UID, and attributes, and retains the breadcrumb workflow.
+Trees open in **Fit tree** view, showing the whole-tree overview.
 **Readable view** places the root near the top at 100% zoom (scaled down only to fit
 a narrow container) for legible labels. Pan to reach other
 branches; keyboard focus brings offscreen nodes into view. The
@@ -110,19 +119,24 @@ For generic syntax, `ID` is the registered type; for SubTrees it remains the tar
 tree ID. The metadata map is optional for conversion, so built-ins still work on
 standalone definitions. Custom robotics types require the document's model map.
 
-`BehaviorTreeNode` shows the name, registered type, category and UID with a solid
-8px category-colored border: Control blue, Action purple, Condition cyan, Decorator
-orange, SubTree slate, and Unknown gray. Names use 24px text, registered types 18px, and metadata/status
-labels 16px. Long names are truncated in the graph and available in full in
-the inspector. Handles remain measurable but invisible and non-connectable.
-Selection uses a dark outline; category colors do not indicate execution status.
-The legend below the graph shows all category borders, execution-status badges,
-the gold running path, and the selection outline. It stays readable when zooming
-the diagram and wraps on smaller screens. Nodes and the legend share their color styles.
+`BehaviorTreeNode` shows only the name and a category icon in a compact row with a thin neutral border matching the connector color. Icons are split arrows for Control, lightning
+bolt for Action, checked diamond for Condition, wrapping arrow for Decorator, and
+Pictogrammers' `mdi-sitemap-outline` for SubTree. Unknown is omitted from the legend;
+unrecognized XML nodes retain a neutral question-mark fallback and inspector metadata.
+The MDI SVG is bundled locally with its license in `public/licenses/material-design-icons.txt`.
+Names use 24px text; long names truncate
+and remain available in full on hover and in the inspector. UID, registered type,
+category, exact status, and XML attributes remain in the inspector.
 
-Click an ordinary node (or focus it and press Enter) to open `NodeInspector`.
-SubTree clicks still navigate; use their separate **Inspect** button for reference
-attributes without navigating. All XML attribute values are displayed as text,
+Node fills indicate recorded status: pale yellow RUNNING, green SUCCESS, red FAILURE,
+gray IDLE, muted SKIPPED, and white Not observed. Hover also shows the exact status;
+RUNNING retains its gold inner outline. Selection uses a separate dark outer outline.
+The legend below the graph shows the same category icons, status fills,
+gold running path, and selection outline. Handles remain invisible and non-connectable.
+
+Click any node to open `NodeInspector`; Enter also inspects ordinary nodes.
+For SubTrees and Controls with children, Enter, double-click, and plus/minus toggle contents in the current graph.
+Use **Open subtree separately** in the inspector when a dedicated view is wanted. All XML attribute values are displayed as text,
 including expressions and blackboard references. Close or click the canvas to
 clear inspection. Navigation resets selection. The scrollable inspector appears
 beside the diagram, or below it on narrow screens. Inspection does not recalculate
@@ -136,11 +150,11 @@ across all 53 definitions. For interaction checks:
 
 1. In RobotTree, select UID 2 (ReactiveSequence → Control) and UID 4
    (MissionServer → Action); verify their details and selection outline.
-2. Inspect MissionBody UID 34 (SubTree), then click the node to open it. Verify
+2. Inspect MissionBody UID 34 (SubTree), then double-click the node to expand it inline. Verify
    UID 38 (RecordDuringExecution → Decorator) and UID 44 (ScriptCondition → Condition),
    including the exact `code` attribute. Check IsLaserFrontHealthy UID 59.
 3. Open ActionDispatchSwitch → ExecFillin and inspect FollowPath UID 129.
-   Check long attributes, Close, Back, breadcrumbs and Return to RobotTree.
+   Check long attributes and Close. Use Open subtree separately to check Back, breadcrumbs and Return to RobotTree.
 4. Check edges, pan/zoom, keyboard inspection, a narrow window, and the console.
    Confirm dragging nodes, creating connections and Delete/Backspace cannot edit.
 
@@ -294,10 +308,9 @@ including while playing. Reset pauses and returns to zero; reaching the end stop
 playback and changes Play to **Replay**. Back, breadcrumbs, and SubTree navigation
 preserve playback position, speed, and playing state.
 
-Category accents still identify node types. A separate text badge shows execution:
+Category icons identify node types. The node fill shows execution:
 RUNNING is yellow, SUCCESS green, FAILURE red, IDLE gray, and SKIPPED muted neutral.
-RUNNING also adds a pale-yellow card surface and an inner gold accent, preserving
-the category-colored border without
+RUNNING also adds a pale-yellow card surface and an inner gold accent without
 changing node dimensions or animating the graph. Selection keeps its dark outline.
 Thick gold connections trace the full route from the displayed tree's root to each
 RUNNING node, including shared ancestors. They clear when no RUNNING descendant
@@ -349,7 +362,7 @@ For browser verification with the supplied recording:
    Play, pause, change speeds, reset, and play to the end; verify Replay works.
 2. Open RobotTree → MissionBody → ActionDispatchSwitch → ExecDriveToPose and
    inspect UID 212. Seek near 23.5 s: RUNNING; back to 18 s: Not observed;
-   forward to 25 s: IDLE. The node badge and inspector must agree.
+   forward to 25 s: IDLE. The node fill, hover status, and inspector must agree.
 3. Navigate using Back and breadcrumbs while playing. Playback should continue;
    only changing trees should lay out and position a new graph. Check selection,
    connections, pan/zoom, and that nodes never move during status updates.
@@ -369,18 +382,38 @@ The toolbar above the canvas groups path filtering, subtree visibility, and view
 - **Running path only** hides nodes outside the routes to currently RUNNING nodes.
   Ancestors remain visible for context, with their own recorded statuses.
 - **Subtrees → All expanded** expands all resolvable subtree contents inline.
-  Choose **Collapsed** to hide their contents again. SubTree references remain clickable.
+  Choose **Collapsed** to hide their contents again.
 - **Subtrees → Running only** expands a subtree when its reference or any descendant
   has a recorded RUNNING status. Other subtree contents remain collapsed.
 
 Contents are hidden by default. Combine Running path only with Subtrees → Running
 only for the complete active route through nested definitions. Both follow playback
 and backward seeks. If no node is RUNNING, the path filter shows an empty message;
-the toolbar stays available. Clicking SubTree references still opens their exact
-definitions through the existing breadcrumb navigation.
+the toolbar stays available.
 
-Changing a visibility option returns to Fit tree view. Use Readable view to zoom in at the root.
-During playback, the camera stays put and the root stays anchored; layout only
+Double-click an individual SubTree (or use its plus/minus button) to toggle it
+without leaving the current tree. Nested subtrees start collapsed under the default
+mode; expand them individually. Manual choices override the selected bulk mode and
+the selector shows **Custom**. Choosing any bulk mode clears those overrides.
+Closing an ancestor hides all its descendants but remembers nested choices for
+reopening. Running path only remains an independent filter. Playback and UID status
+mapping continue unchanged; unresolved or empty references have a disabled toggle.
+Single-click inspects any node; the inspector retains **Open subtree separately**
+for explicit breadcrumb navigation.
+
+Controls with execution children use the same double-click, plus/minus, and Enter
+actions. They hide descendants by default at SUCCESS, unless a descendant is still
+recorded RUNNING. Other statuses leave the branch open. Manual choices take priority
+through playback and seeks, survive closing an ancestor, and are independent of the
+Subtrees selector. Changing definitions clears these choices. This only changes
+visibility: a parent's SUCCESS does not imply any particular child status, and hidden
+nodes retain their exact recording data.
+
+Toggling an individual branch preserves the current zoom and pan, with the toggled
+node kept at the same screen position while surrounding nodes are laid out again.
+Use **Fit tree** whenever you want the whole-tree overview. Changing a bulk visibility
+option still fits the tree; **Readable view** zooms in at the root.
+During playback, the camera stays put and the last toggled node (or the root) stays anchored; layout only
 changes when the filtered nodes or connections change. Selection is cleared when
 its node leaves the visible graph.
 Each newly navigated definition starts with the default visibility options.
@@ -396,9 +429,12 @@ For the supplied recording at 23.5 seconds, RobotTree has 28 nodes with contents
 hidden, 765 with all contents expanded, and 24 with Running path only plus Subtrees →
 Running only. The last view includes UID 212 inside ExecDriveToPose. Seeking to
 18 or 25 seconds removes UID 212 from the running path. `npm test` covers expansion,
-duplicate tree IDs, fallback IDs, invalid references, filtering, seeks, and layout
-caching; all six visibility combinations were checked against the real XML without
-overlapping node rectangles.
+duplicate tree IDs, fallback IDs, invalid references, filtering, individual toggles,
+nested collapse/reopening, successful Control defaults, manual overrides, bulk-mode
+resets, seeks, and layout caching. All six visibility combinations were checked at
+0, 10, and 23.5 seconds against the real XML without overlapping node rectangles or
+dangling connections. ManualCleanBody's setup_guard (UID 466) at 10 seconds was
+verified collapsed by default and reopenable with its original children and UIDs.
 
 ## Recommended IDE Setup
 

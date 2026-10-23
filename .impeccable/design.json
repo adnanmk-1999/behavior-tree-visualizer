@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-21T00:00:00Z",
+  "generatedAt": "2026-10-22T00:00:00Z",
   "title": "Design System: Behavior Tree Visualizer",
   "extensions": {
     "colorMeta": {
@@ -68,11 +68,7 @@
       },
       "node-name": {
         "displayName": "Node name",
-        "purpose": "Two-line name inside fixed graph nodes."
-      },
-      "node-type": {
-        "displayName": "Node type",
-        "purpose": "Registered type inside graph nodes."
+        "purpose": "Single-line name beside the category icon in compact graph nodes."
       },
       "code": {
         "displayName": "Inspector code",
@@ -155,7 +151,7 @@
       "kind": "input",
       "refersTo": "select",
       "description": "Native labeled select; the same control style is used for subtree visibility.",
-      "html": "<label class=\"ds-speed\">Speed <select class=\"ds-select\" aria-label=\"Playback speed\"><option>0.5\u00d7</option><option selected>1\u00d7</option><option>2\u00d7</option><option>4\u00d7</option></select></label>",
+      "html": "<label class=\"ds-speed\">Speed <select class=\"ds-select\" aria-label=\"Playback speed\"><option>0.5×</option><option selected>1×</option><option>2×</option><option>4×</option></select></label>",
       "css": ".ds-speed {display: inline-flex; align-items: center; gap: .5rem; color: var(--muted, #53647a); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: .875rem;} .ds-select {min-height: 40px; min-width: 4.5rem; padding: .4rem .5rem; border: 1px solid var(--line, #d7e0ea); border-radius: 6px; background: var(--surface, #fff); color: var(--ink, #182b45); font: inherit; cursor: pointer;} .ds-select:hover:not(:disabled) {border-color: #91a4bd;} .ds-select:focus-visible {outline: 3px solid var(--accent, #245dcc); outline-offset: 3px;} .ds-select:disabled {cursor: not-allowed;} @media (max-width: 600px) {.ds-select {min-height: 44px;}} @media (max-width: 380px) {.ds-speed {flex-direction: column; align-items: flex-start; gap: .125rem;}}"
     },
     {
@@ -170,9 +166,9 @@
       "name": "Behavior tree node",
       "kind": "card",
       "refersTo": "behavior-tree-node",
-      "description": "Control-node specimen with independent category border, RUNNING status, and selection outline. The graph owns position and zoom.",
-      "html": "<div class=\"ds-node ds-running\" tabindex=\"0\" aria-label=\"top_level, Control, RUNNING\"><div class=\"ds-node-heading\"><div class=\"ds-category\">Control</div><span class=\"ds-status\">RUNNING</span></div><strong class=\"ds-node-name\" title=\"top_level\">top_level</strong><span class=\"ds-node-type\" title=\"ReactiveSequence\">ReactiveSequence</span><div class=\"ds-node-footer\"><span title=\"2\">UID 2</span></div></div>",
-      "css": ".ds-node {box-sizing: border-box; width: 360px; height: 208px; padding: 7px 9px; display: flex; flex-direction: column; gap: 6px; border: 8px solid #1d4ed8; border-radius: 12px; background: #fff; color: #182b45; text-align: left; cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.5;} .ds-node-heading {display: flex; align-items: center; justify-content: space-between; gap: 6px; height: 30px; flex-shrink: 0;} .ds-category {color: #1d4ed8; font-size: 16px; font-weight: 600; line-height: 24px;} .ds-status {flex-shrink: 0; border: 1px solid #a16207; border-radius: 3px; padding: 2px 6px; background: #facc15; color: #422006; font-size: 16px; font-weight: 600; line-height: 24px;} .ds-node-name {display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; height: 60px; flex-shrink: 0; font-size: 24px; font-weight: 700; line-height: 30px;} .ds-node-type {overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 18px; line-height: 24px; color: #475569;} .ds-node-footer {display: flex; align-items: center; gap: 6px; margin-top: auto; min-height: 36px; font-size: 16px; line-height: 24px; border-top: 1px solid #d7e0ea;} .ds-node:hover {outline: 1px solid #1d4ed8; outline-offset: 2px;} .ds-node.ds-running {background: #fffbeb; box-shadow: inset 0 0 0 2px #a16207;} .ds-running .ds-node-type {color: #713f12;} .ds-node.ds-selected {outline: 2px solid #172033; outline-offset: 3px;} .ds-node:focus-visible {outline: 3px solid var(--ink, #182b45); outline-offset: 4px;}"
+      "description": "Compact Control node with split-arrow category icon and a thin neutral border matching connectors, recorded status fill, and selection outline. Hover and inspection expose metadata. Width follows the name, bounded to 160–360px; the graph uses the measured width for layout. Controls with children and SubTrees have a plus/minus toggle; double-click and Enter toggle the same branch. Successful Controls collapse by default unless on a RUNNING path; manual choices take priority.",
+      "html": "<div class=\"ds-node ds-running\" tabindex=\"0\" title=\"top_level · Control · ReactiveSequence · UID 2 · RUNNING\" aria-label=\"top_level, Control, UID 2, RUNNING\"><svg class=\"ds-category-icon\" width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3v6M12 9l-7 7M12 9l7 7M5 11v5h5M14 16h5v-5\"/></svg><strong class=\"ds-node-name\">top_level</strong><button type=\"button\" class=\"ds-node-toggle\" aria-label=\"Collapse top_level children\" aria-expanded=\"true\" title=\"Collapse children here\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/></svg></button></div>",
+      "css": ".ds-node {box-sizing: border-box; width: fit-content; min-width: 160px; max-width: 360px; height: 76px; padding: 15px 17px; display: flex; align-items: center; gap: 10px; border: 1px solid #a4b2c5; border-radius: 12px; background: #fff; color: #182b45; text-align: left; cursor: pointer; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;} .ds-category-icon {flex-shrink: 0; color: #1d4ed8;} .ds-node-name {flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 24px; font-weight: 700; line-height: 30px;} .ds-node:hover {outline: 1px solid #91a4bd; outline-offset: 2px;} .ds-node.ds-running {background: #fffbeb; box-shadow: inset 0 0 0 2px #a16207;} .ds-node.ds-selected {outline: 2px solid #172033; outline-offset: 3px;} .ds-node:focus-visible {outline: 3px solid var(--ink, #182b45); outline-offset: 4px;} .ds-node-toggle {display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; cursor: pointer;} .ds-node-toggle:hover:not(:disabled) {background: #eaf1ff; border-color: #245dcc;} .ds-node-toggle:focus-visible {outline: 3px solid #245dcc; outline-offset: 3px;} .ds-node-toggle:disabled {opacity: .45; cursor: not-allowed;}"
     }
   ],
   "narrative": {
@@ -187,24 +183,24 @@
     "rules": [
       {
         "name": "The Independent Signals Rule",
-        "body": "Keep category on the thick node border and category label, execution in its text badge, and selection on an outer outline. A highlighted ancestor path does not change an ancestor's recorded status.",
+        "body": "Keep category on its icon, execution in the node fill, and selection on an outer outline. Exact status text remains available on hover and in the inspector. A highlighted ancestor path does not change an ancestor's recorded status.",
         "section": "colors"
       },
       {
         "name": "The Readable Node Rule",
-        "body": "Preserve node name/type sizes and the 16px category, status, and footer text at graph scale. Use Fit tree for the overview and Readable view for inspection.",
+        "body": "Preserve the 24px node name and 28px category icon at graph scale; keep secondary metadata in the inspector. Use Fit tree for the overview and Readable view for inspection.",
         "section": "typography"
       }
     ],
     "dos": [
-      "Do preserve the 360 \u00d7 208px node geometry, 8px category borders, and large node typography.",
+      "Do preserve the 160–360px width limits and 76px node height, thin neutral borders, and large node typography.",
       "Do keep playback above the visualization, the legend below it, and definitions collapsed initially.",
-      "Do retain visible text for category and recorded status, keyboard focus, and accessible names for icon-only controls.",
+      "Do label every category icon and status fill in the legend; retain exact status text in hover descriptions and the inspector, keyboard focus, and accessible names for icon-only controls.",
       "Do preserve exact XML identity, instance paths, and playback position through navigation."
     ],
     "donts": [
       "Don't use category color to imply execution status or selection.",
-      "Don't treat \u201cNot observed\u201d as IDLE or fabricate status for an ancestor on a running path.",
+      "Don't treat “Not observed” as IDLE or fabricate status for an ancestor on a running path.",
       "Don't add decorative panels, raster imagery, or motion that competes with the graph.",
       "Don't shrink graph labels to compensate for the whole-tree overview; retain the Readable view action."
     ]

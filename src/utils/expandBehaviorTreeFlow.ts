@@ -8,7 +8,7 @@ import { getNodeStatus } from './playbackState.ts'
 export type SubtreeVisibility = 'hidden' | 'all' | 'running'
 
 export interface ExpandedBehaviorTreeFlow extends BehaviorTreeFlow {
-  subtreeAncestors: Map<string, readonly string[]>
+  branchAncestors: Map<string, readonly string[]>
 }
 
 const edgeId = (source: string, target: string) =>
@@ -23,13 +23,12 @@ export function expandBehaviorTreeFlow(
     nodes: [],
     edges: [],
     warnings: [],
-    subtreeAncestors: new Map(),
+    branchAncestors: new Map(),
   }
   const usedIds = new Set<string>()
 
   function append(
     definition: BehaviorTreeDefinition,
-    subtreeAncestors: readonly string[],
     ancestors: ReadonlySet<BehaviorTreeDefinition>,
     parentId?: string,
   ) {
@@ -60,7 +59,6 @@ export function expandBehaviorTreeFlow(
       const id = ids.get(node.id)!
       usedIds.add(id)
       result.nodes.push({ ...node, id })
-      result.subtreeAncestors.set(id, subtreeAncestors)
       if (parentId && !children.has(node.id)) {
         result.edges.push({ id: edgeId(parentId, id), source: parentId, target: id })
       }
@@ -80,7 +78,7 @@ export function expandBehaviorTreeFlow(
         const target = resolveSubTree(node.data, definitions)
         if (ancestors.has(target))
           throw new Error(`Recursive SubTree "${target.ID}" was left collapsed.`)
-        append(target, [...subtreeAncestors, id], new Set([...ancestors, target]), id)
+        append(target, new Set([...ancestors, target]), id)
       } catch (cause) {
         result.warnings.push(
           cause instanceof Error ? cause.message : `Could not expand SubTree ${id}.`,
@@ -89,7 +87,17 @@ export function expandBehaviorTreeFlow(
     }
   }
 
-  append(tree, [], new Set([tree]))
+  append(tree, new Set([tree]))
+  const parents = new Map(result.edges.map((edge) => [edge.target, edge.source]))
+  function ancestorsOf(id: string): readonly string[] {
+    const cached = result.branchAncestors.get(id)
+    if (cached) return cached
+    const parent = parents.get(id)
+    const ancestors = parent === undefined ? [] : [...ancestorsOf(parent), parent]
+    result.branchAncestors.set(id, ancestors)
+    return ancestors
+  }
+  for (const node of result.nodes) ancestorsOf(node.id)
   return result
 }
 
@@ -98,7 +106,8 @@ export function filterBehaviorTreeFlow(
   statuses: NodeStatusMap,
   subtrees: SubtreeVisibility,
   runningPathOnly: boolean,
-): BehaviorTreeFlow {
+  overrides: ReadonlyMap<string, boolean> = new Map(),
+) {
   const runningEdges = getRunningPathEdges(flow, statuses)
   const onPath = new Set(
     flow.nodes
@@ -111,10 +120,23 @@ export function filterBehaviorTreeFlow(
       onPath.add(edge.target)
     }
   }
+  const parents = new Set(flow.edges.map((edge) => edge.source))
+  const expandableBranchIds = new Set<string>()
+  const expandedBranchIds = new Set<string>()
+  const collapsed = new Set<string>()
+  for (const node of flow.nodes) {
+    if (!node.data?.collapsible || !parents.has(node.id)) continue
+    expandableBranchIds.add(node.id)
+    const defaultOpen =
+      node.data.tag === 'SubTree'
+        ? subtrees === 'all' || (subtrees === 'running' && onPath.has(node.id))
+        : getNodeStatus(statuses, node.data._uid) !== 'SUCCESS' || onPath.has(node.id)
+    if (overrides.get(node.id) ?? defaultOpen) expandedBranchIds.add(node.id)
+    else collapsed.add(node.id)
+  }
   const nodes = flow.nodes.filter((node) => {
-    const ancestors = flow.subtreeAncestors.get(node.id) ?? []
-    const expanded =
-      subtrees === 'all' || ancestors.every((id) => subtrees === 'running' && onPath.has(id))
+    const ancestors = flow.branchAncestors.get(node.id) ?? []
+    const expanded = ancestors.every((id) => !collapsed.has(id))
     return expanded && (!runningPathOnly || onPath.has(node.id))
   })
   const visible = new Set(nodes.map((node) => node.id))
@@ -122,5 +144,7 @@ export function filterBehaviorTreeFlow(
     nodes,
     edges: flow.edges.filter((edge) => visible.has(edge.source) && visible.has(edge.target)),
     warnings: flow.warnings,
+    expandableBranchIds,
+    expandedBranchIds,
   }
 }
