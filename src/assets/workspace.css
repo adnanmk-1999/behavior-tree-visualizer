@@ -23,6 +23,11 @@
   --bt-subtree-tone-0: rgb(var(--v-theme-subtree-blue, 100, 140, 235));
   --bt-subtree-tone-1: rgb(var(--v-theme-subtree-plum, 200, 130, 190));
   --bt-subtree-tone-2: rgb(var(--v-theme-subtree-cyan, 80, 185, 190));
+  --bt-subtree-tone-3: rgb(var(--v-theme-subtree-violet, 150, 130, 216));
+  --bt-subtree-tone-4: rgb(var(--v-theme-subtree-sand, 184, 160, 128));
+  --bt-subtree-tone-5: rgb(var(--v-theme-subtree-slate, 154, 170, 184));
+  --bt-subtree-tone-6: rgb(var(--v-theme-subtree-indigo, 120, 141, 196));
+  --bt-subtree-tone-7: rgb(var(--v-theme-subtree-rose, 189, 142, 156));
   --bt-border-hover: color-mix(in srgb, var(--bt-text) 40%, transparent);
   --bt-surface-hover: color-mix(in srgb, var(--bt-text) 8%, var(--bt-surface));
   --bt-primary-soft: color-mix(in srgb, var(--bt-primary) 12%, var(--bt-surface));

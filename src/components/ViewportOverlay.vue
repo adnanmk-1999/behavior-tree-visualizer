@@ -13,6 +13,7 @@ defineProps<{
   subtrees: SubtreeVisibility
   hasSubtreeOverrides: boolean
   showSubtreeBoundaries: boolean
+  showControlBoundaries: boolean
 }>()
 defineEmits<{
   zoomIn: []
@@ -22,6 +23,7 @@ defineEmits<{
   toggleRunningPath: []
   setSubtrees: [mode: SubtreeVisibility]
   toggleSubtreeBoundaries: []
+  toggleControlBoundaries: []
 }>()
 
 const id = useId()
@@ -171,6 +173,15 @@ onBeforeUnmount(() => {
           @click="$emit('toggleSubtreeBoundaries')"
         >
           <AppIcon name="layers" />
+        </button>
+        <button
+          class="overlay-button"
+          type="button"
+          aria-label="Toggle Control Highlighting"
+          :aria-pressed="showControlBoundaries"
+          @click="$emit('toggleControlBoundaries')"
+        >
+          <AppIcon name="control" />
         </button>
       </div>
 
@@ -374,7 +385,7 @@ onBeforeUnmount(() => {
 [data-tooltips-dismissed] .overlay-button::after {
   visibility: hidden;
 }
-@container bt-canvas (max-width: 400px) {
+@container bt-canvas (max-width: 440px) {
   .viewport-actions {
     gap: 4px;
   }
@@ -387,6 +398,16 @@ onBeforeUnmount(() => {
   .overlay-button {
     flex-basis: 28px;
     width: 28px;
+  }
+}
+@container bt-canvas (max-width: 340px) {
+  .overlay-button {
+    flex-basis: 24px;
+    width: 24px;
+  }
+  .overlay-button .app-icon {
+    width: 20px;
+    height: 20px;
   }
 }
 </style>

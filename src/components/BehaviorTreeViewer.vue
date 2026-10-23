@@ -53,7 +53,8 @@ const {
   runningPathOnly,
   subtrees,
   runningPathEdges,
-  subtreeBoundaries,
+  branchBoundaries,
+  showControlBoundaries,
   expandedBranchIds,
   expandableBranchIds,
   hasSubtreeOverrides,
@@ -64,6 +65,11 @@ const {
   toRef(props, 'definitions'),
   toRef(props, 'nodeModels'),
   toRef(props, 'statuses'),
+)
+const visibleBoundaries = computed(() =>
+  branchBoundaries.value.filter((boundary) =>
+    boundary.kind === 'SubTree' ? showSubtreeBoundaries.value : showControlBoundaries.value,
+  ),
 )
 let pendingView = true
 
@@ -386,14 +392,19 @@ watch(graph, async (_, __, onCleanup) => {
                 @pane-click="onPaneClick"
               >
                 <template #zoom-pane>
-                  <svg v-if="showSubtreeBoundaries" class="subtree-boundaries" aria-hidden="true">
+                  <svg
+                    v-if="showSubtreeBoundaries || showControlBoundaries"
+                    class="branch-boundaries"
+                    aria-hidden="true"
+                  >
                     <g
-                      v-for="boundary in subtreeBoundaries"
+                      v-for="boundary in visibleBoundaries"
                       :key="boundary.id"
-                      :data-subtree-id="boundary.id"
+                      :data-subtree-id="boundary.kind === 'SubTree' ? boundary.id : undefined"
+                      :data-control-id="boundary.kind === 'Control' ? boundary.id : undefined"
                       :style="{ '--bt-subtree-accent': `var(--bt-subtree-tone-${boundary.tone})` }"
                     >
-                      <path class="subtree-boundary" :d="boundary.path" />
+                      <path class="branch-boundary" :d="boundary.path" />
                     </g>
                   </svg>
                 </template>
@@ -416,6 +427,7 @@ watch(graph, async (_, __, onCleanup) => {
                 :subtrees="subtrees"
                 :has-subtree-overrides="hasSubtreeOverrides"
                 :show-subtree-boundaries="showSubtreeBoundaries"
+                :show-control-boundaries="showControlBoundaries"
                 @zoom-in="zoomIn()"
                 @zoom-out="zoomOut()"
                 @readable-view="readableView()"
@@ -427,6 +439,7 @@ watch(graph, async (_, __, onCleanup) => {
                 "
                 @set-subtrees="setSubtrees"
                 @toggle-subtree-boundaries="showSubtreeBoundaries = !showSubtreeBoundaries"
+                @toggle-control-boundaries="showControlBoundaries = !showControlBoundaries"
               />
             </div>
           </div>
@@ -482,7 +495,7 @@ watch(graph, async (_, __, onCleanup) => {
   min-height: 200px;
   background-color: var(--bt-background);
 }
-.subtree-boundaries {
+.branch-boundaries {
   position: absolute;
   top: 0;
   left: 0;
@@ -492,7 +505,7 @@ watch(graph, async (_, __, onCleanup) => {
   z-index: -1;
   pointer-events: none;
 }
-.subtree-boundary {
+.branch-boundary {
   fill: color-mix(in srgb, var(--bt-subtree-accent) 14%, var(--bt-background));
   stroke: color-mix(in srgb, var(--bt-subtree-accent) 45%, var(--bt-background));
   stroke-width: 1;

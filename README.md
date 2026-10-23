@@ -13,8 +13,9 @@ recorded playback immediately above the graph, and controls anchored inside the
 plain canvas. A single legend combines Category on the left and Status on the right
 near the top left. The collapsible Tree Details panel above it shows node/connection
 counts, zoom, and visibility state. Bottom-right icon groups provide zoom and view actions;
-all nine blue-grey viewport buttons stay visible side by side in one horizontal row,
-including Running path only, the three subtree expansion modes, and Subtree boundaries.
+all ten blue-grey viewport buttons stay visible side by side in one horizontal row,
+including Running path only, the three subtree expansion modes, and independent
+Subtree and Control highlighting toggles.
 Click a node to open the inspector on the right (below the
 graph on smaller screens). Hover or focus the info icon at the top right of the
 canvas for keyboard and mouse shortcuts; tapping also
@@ -61,7 +62,8 @@ Inherited Vuetify variables use RGB channel lists, such as
 `--v-theme-primary: 255, 237, 0`. Supported roles are background, surface, primary,
 on-primary, secondary, error, warning, info, success, on-surface, plus
 `--v-border-color` and `--v-border-opacity`. Defaults match the KopsiHub dark theme.
-Optional `subtree-blue`, `subtree-plum`, and `subtree-cyan` roles set boundary accents.
+Optional `subtree-blue`, `subtree-plum`, `subtree-cyan`, `subtree-violet`, `subtree-sand`,
+`subtree-slate`, `subtree-indigo`, and `subtree-rose` roles set the eight boundary accents.
 For direct `--bt-*` overrides, set the variable on the component's `.bt-theme` root;
 the defaults are defined there, not on the document root. Playback selects and node hover descriptions remain native. Overlay buttons have
 scoped light-grey hover/focus tooltips with dark text. Tooltips sit above their buttons,
@@ -465,15 +467,25 @@ visibility, Readable view, and Fit tree:
 - **Subtree boundaries** (layers icon, on by default) shows faint outlines and a
   subtle background tint around visible expanded SubTree contents. Toggle it with
   a click or Enter/Space while focused; it leaves node positions, zoom, and pan unchanged.
+- **Toggle Control Highlighting** (Control icon, off by default) adds the same
+  boundaries around expanded Control nodes and their visible descendants. It works
+  independently of Subtree highlighting and disappears for a branch when collapsed.
+  Both kinds use the shared eight-color palette; enabling controls preserves existing
+  SubTree colors, and all boundaries render in nesting order without accumulating opacity.
 
 Boundaries include the SubTree reference node and its visible descendants, following
 each depth row to keep neighboring branches outside. Corners are rounded, with smaller
-rounding on short steps. Boundary steps leave 12px of clearance around connector bends.
+rounding on short steps. Boundary steps leave 12px of clearance around connector bends
+where space permits. When unrelated regions meet, their steps yield to leave a 4px
+gap in graph coordinates; nested outlines remain inside their enclosing region.
 There are no extra boundary labels;
 the node name identifies the SubTree, and the inspector retains its UID. Blue, plum,
-and cyan accents cycle between consecutive SubTree siblings and skip the enclosing
-SubTree's color. Colors stay stable through expansion, filtering, and playback;
-the finite palette repeats, so node names and inspector details identify instances.
+cyan, violet, sand, slate, indigo, and dusty rose accents cycle between SubTree siblings,
+skipping the enclosing SubTree's color and colors assigned to neighboring regions.
+Neighbors are determined across complete tree ranks, including different subtree
+families. Colors stay stable through expansion, filtering, and playback. The finite
+palette repeats; if all available colors are constrained, the least-conflicting
+non-parent color is reused. Node names and inspector details identify instances.
 Fills mix the accent with the opaque canvas color, preventing nested backgrounds
 from getting progressively brighter. Boundaries pan and zoom with the
 graph and let pointer actions pass through. Collapsing or filtering contents
