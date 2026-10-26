@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Behavior Tree initial sizing checks</title>
+  </head>
+  <body>
+    <h1>Behavior Tree initial sizing checks</h1>
+    <pre id="result" role="status">Running…</pre>
+    <div id="viewer" style="height: 800px"></div>
+    <script type="module">
+      import { createApp, h, nextTick } from 'vue'
+      import BehaviorTreeViewer from '/src/components/BehaviorTreeViewer.vue'
+      import { parseBehaviorTree } from '/src/utils/parseBehaviorTree.ts'
+      import { NODE_MIN_WIDTH, NODE_MAX_WIDTH } from '/src/utils/layoutTree.ts'
+
+      const result = document.querySelector('#result')
+      const container = document.querySelector('#viewer')
+      let app
+      let checks = 0
+      function assert(condition, message) {
+        if (!condition) throw new Error(message)
+        checks++
+      }
+      async function settle() {
+        await nextTick()
+        await new Promise(requestAnimationFrame)
+        await new Promise(requestAnimationFrame)
+      }
+
+      try {
+        const response = await fetch('/tree.xml')
+        assert(response.ok, `Could not load tree.xml: HTTP ${response.status}`)
+        const parsed = parseBehaviorTree(await response.text())
+        const tree = parsed.behaviorTrees.find((tree) => tree.ID === 'RobotTree')
+        const context = document.createElement('canvas').getContext('2d')
+        // Wider and narrower inherited fonts both differ from the initial sans-serif estimate.
+        for (const font of ['sans-serif', 'serif', 'monospace']) {
+          app?.unmount()
+          container.style.fontFamily = font
+          app = createApp({
+            render: () =>
+              h(BehaviorTreeViewer, {
+                tree,
+                definitions: parsed.behaviorTrees,
+                nodeModels: parsed.nodeModels,
+              }),
+          })
+          app.mount(container)
+          await settle()
+          const nodes = [...container.querySelectorAll('.vue-flow__node')]
+          assert(nodes.length === 28, `${font}: RobotTree must render all 28 nodes`)
+          const before = nodes.map((node) => node.offsetWidth)
+          for (const node of nodes) {
+            const label = node.querySelector('.node-name')
+            context.font = getComputedStyle(label).font
+            const measured = Math.ceil(context.measureText(label.textContent).width) + 74
+            assert(
+              node.offsetWidth === Math.min(NODE_MAX_WIDTH, Math.max(NODE_MIN_WIDTH, measured)),
+              `${font}: ${label.textContent} has the wrong width before interaction`,
+            )
+            if (measured <= NODE_MAX_WIDTH) {
+              assert(
+                label.scrollWidth === label.clientWidth,
+                `${font}: ${label.textContent} truncates`,
+              )
+            }
+          }
+          if (font === 'monospace') {
+            const long = container.querySelector('[data-id="1"] .node-name')
+            assert(
+              long.scrollWidth > long.clientWidth,
+              'Labels beyond the width cap still truncate',
+            )
+          }
+          const clicked = container.querySelector('.vue-flow__node[data-id="5"]')
+          clicked.focus({ preventScroll: true })
+          clicked.click()
+          await settle()
+          assert(
+            nodes.every((node, index) => node.offsetWidth === before[index]),
+            `${font}: clicking TeachServer must not change node widths`,
+          )
+        }
+        result.textContent = `PASS: ${checks} assertions. Initial label sizing, stable widths after clicking, and intentional truncation across three inherited fonts.`
+      } catch (error) {
+        result.textContent = `FAIL: ${error.message}`
+        throw error
+      }
+    </script>
+  </body>
+</html>
