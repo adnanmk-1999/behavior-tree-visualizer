@@ -15,6 +15,11 @@
   do not perform them as a side effect of ordinary development work.
 - Branch names do not control package versions or trigger publishing. Consumers
   install versioned packages independently of the source branches.
+- Publish `@adnanmk-1999/behavior-tree-viewer` manually to GitHub Packages using
+  the manifest's `publishConfig.registry`. Start with GitHub's default private
+  visibility. Moving to npmjs.com or a company scope is a separate migration.
+- Keep package authentication tokens out of the repository and package archive.
+  Use user-level npm credentials; GitHub authentication for Git is separate.
 
 ## Project boundaries
 
@@ -46,5 +51,6 @@
 - Keep the README focused on current setup, usage, architecture, packaging, and
   the development/release workflow. Leave work-package logs and historical
   verification reports out of it.
-- Describe the actual package state. The current manifest is private and intended
-  for local packing; registry configuration and publication remain separate work.
+- Describe the actual package state: the manifest targets GitHub Packages and
+  supports local packing. Configuration and a successful dry run do not mean a
+  version has been published. Keep release and consumer commands in sync with it.

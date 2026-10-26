@@ -34,6 +34,10 @@ for this workflow are in [AGENTS.md](AGENTS.md).
 
 ## Library package
 
+The package is `@adnanmk-1999/behavior-tree-viewer`, currently version `0.1.0`.
+Its publish destination is GitHub Packages at `https://npm.pkg.github.com`.
+An npmjs.com account is not needed for this registry.
+
 `src/App.vue` owns the playground's loading, navigation, and playback. It continues
 to use local viewer source during development. `src/index.ts` defines the library's
 public exports: `BehaviorTreeViewer`, `parseBehaviorTree`, and the tree/status
@@ -42,24 +46,110 @@ TypeScript types. The package also exports `style.css`.
 ```sh
 npm run build:lib    # library JavaScript, CSS, and declarations in dist-library/
 npm run test:package # pack, install in a temporary consumer, check types, and build
-npm pack             # rebuild and create behavior-tree-visualizer-0.0.0.tgz
+npm pack             # rebuild and create adnanmk-1999-behavior-tree-viewer-0.1.0.tgz
 ```
 
 Vue 3.5+ is supplied by the consuming application. Vue Flow and Dagre remain
 implementation dependencies. The archive includes the compiled library, its public
-declarations, README, and package metadata. Demo XML, recordings, application code,
-and development tools stay in this repository.
+declarations, icon license, README, and package metadata. Demo XML, recordings,
+application code, and development tools stay in this repository.
 
-The current name/version are for local testing. `private: true` still blocks
-registry publication; the release name, registry, and version will be configured
-separately. The existing `npm run build` builds the standalone app into `dist/`.
+The existing `npm run build` builds the standalone app into `dist/`. Packing and
+testing work locally before a version is published.
+
+## Publish to GitHub Packages
+
+Publishing is manual. GitHub initially creates the package with private
+visibility; visibility is managed in its package settings. The manifest's
+`publishConfig.registry` selects GitHub Packages, and `repository` links the
+package to this source repository. The npm `private: true` flag is absent because
+it would block publishing entirely. See [GitHub's npm registry guide](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry).
+
+### Authenticate
+
+Create a **personal access token (classic)** in [GitHub token settings](https://github.com/settings/tokens)
+with `write:packages` and `read:packages` for publishing. Consumers only need
+`read:packages` and access to the package. See [GitHub package permissions](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages).
+
+Run this once on each machine that needs package access:
+
+```sh
+npm login --scope=@adnanmk-1999 --auth-type=legacy --registry=https://npm.pkg.github.com
+```
+
+Enter your GitHub username and use the token as the password. Keep credentials in
+your user-level npm configuration, outside this repository. The GitHub CLI login
+used for `git push` is separate from package authentication.
+
+### Release
+
+Prepare version changes on `develop`, keeping `package.json` and
+`package-lock.json` in sync. For later patch releases, use
+`npm version patch --no-git-tag-version`; the release tag belongs on `main`.
+Commit and push the changes, then merge a pull request from `develop` into `main`.
+
+From a clean working tree, switch to the merged release and verify it:
+
+```sh
+git switch main
+git pull --ff-only origin main
+npm ci
+npm test
+npm run build
+npm run lint
+npm run test:package
+npm publish --dry-run
+git status --short
+```
+
+Confirm the dry run targets `https://npm.pkg.github.com`, contains the expected
+library files and license, and that the working tree is still clean. A dry run
+does not upload a package or prove that your account has publish access.
+
+For the first release, publish:
+
+```sh
+npm publish
+```
+
+After publishing succeeds, tag the source commit:
+
+```sh
+git tag -a v0.1.0 -m "Release 0.1.0"
+git push origin v0.1.0
+```
+
+For later releases, use the version from `package.json` in both the tag and the
+installation command.
+Verify the published version by installing it in another application as below.
+
+A later move to npmjs.com requires an npm account with access to the chosen scope,
+an update to `publishConfig.registry`, and publication to that registry. Consumers
+must update their registry mapping and reinstall the package to refresh lockfile
+URLs. Moving to a company scope also changes the package name and import paths;
+existing installations keep using the old package until updated.
 
 ## Use the viewer in another Vue application
 
-Install the local archive in the consuming application:
+After publication, authenticate as above and add this scope mapping to the
+consuming application's `.npmrc` (beside its `package.json`):
+
+```ini
+@adnanmk-1999:registry=https://npm.pkg.github.com
+```
+
+This file can be committed; it contains only the registry mapping, no token.
+Install the released version:
 
 ```sh
-npm install /absolute/path/to/behavior-tree-visualizer-0.0.0.tgz
+npm install @adnanmk-1999/behavior-tree-viewer@0.1.0
+```
+
+Before publication, test with the local archive instead; no package login is
+needed for this installation:
+
+```sh
+npm install /absolute/path/to/adnanmk-1999-behavior-tree-viewer-0.1.0.tgz
 ```
 
 The viewer and XML parser require a browser. Import the stylesheet once and give
@@ -68,8 +158,8 @@ the viewer's parent a definite height:
 ```vue
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { BehaviorTreeViewer, parseBehaviorTree, type NodeStatusMap } from 'behavior-tree-visualizer'
-import 'behavior-tree-visualizer/style.css'
+import { BehaviorTreeViewer, parseBehaviorTree, type NodeStatusMap } from '@adnanmk-1999/behavior-tree-viewer'
+import '@adnanmk-1999/behavior-tree-viewer/style.css'
 
 const treeDocument = parseBehaviorTree(`
   <root BTCPP_format="4">

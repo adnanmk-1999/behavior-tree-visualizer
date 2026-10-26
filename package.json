@@ -1,7 +1,14 @@
 {
-  "name": "behavior-tree-visualizer",
-  "version": "0.0.0",
-  "private": true,
+  "name": "@adnanmk-1999/behavior-tree-viewer",
+  "version": "0.1.0",
+  "description": "A Vue 3 viewer for BehaviorTree.CPP trees and execution statuses.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adnanmk-1999/behavior-tree-visualizer.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "files": [
     "dist-library/index.js",
