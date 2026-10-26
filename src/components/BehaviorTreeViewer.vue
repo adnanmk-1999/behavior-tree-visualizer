@@ -5,7 +5,7 @@ import type {
   BehaviorTreeDefinition,
   BehaviorTreeNode,
   NodeCategoryMap,
-} from '@/types/behaviorTree'
+} from '../types/behaviorTree'
 import BehaviorTreeNodeView from '@/components/BehaviorTreeNode.vue'
 import NodeInspector from '@/components/NodeInspector.vue'
 import AppIcon from '@/components/AppIcon.vue'
@@ -14,9 +14,7 @@ import { NODE_MAX_WIDTH } from '@/utils/layoutTree'
 import { getNodeStatus } from '@/utils/playbackState'
 import { useBehaviorTreeView } from '@/composables/useBehaviorTreeView'
 import type { SubtreeVisibility } from '@/utils/expandBehaviorTreeFlow'
-import type { NodeStatusMap } from '@/types/behaviorTreeEvents'
-import '@vue-flow/core/dist/style.css'
-import '@/assets/workspace.css'
+import type { NodeStatusMap } from '../types/behaviorTreeEvents'
 
 const props = withDefaults(
   defineProps<{
@@ -456,6 +454,9 @@ watch(graph, async (_, __, onCleanup) => {
     </template>
   </div>
 </template>
+
+<style src="@vue-flow/core/dist/style.css"></style>
+<style src="../assets/workspace.css"></style>
 
 <style scoped>
 .bt-viewer {

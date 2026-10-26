@@ -4,7 +4,7 @@ import type {
   BehaviorTreeNode,
   NodeCategory,
   SubTreeReference,
-} from '@/types/behaviorTree'
+} from '../types/behaviorTree'
 
 function readAttributes(element: Element): Record<string, string> {
   return Object.fromEntries(Array.from(element.attributes, ({ name, value }) => [name, value]))
