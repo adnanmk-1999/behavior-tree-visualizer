@@ -1,4 +1,4 @@
-import { computed, getCurrentInstance, onMounted, ref, watch, type Ref } from 'vue'
+import { computed, getCurrentInstance, nextTick, onMounted, ref, watch, type Ref } from 'vue'
 import type { BehaviorTreeDefinition, NodeCategoryMap } from '@/types/behaviorTree'
 import type { NodeStatusMap } from '@/types/behaviorTreeEvents'
 import {
@@ -22,7 +22,9 @@ export function useBehaviorTreeView(
   const instance = getCurrentInstance()
   const labelFont = ref('700 24px sans-serif')
   if (context && instance) {
-    onMounted(() => {
+    onMounted(async () => {
+      // Vue Flow pauses incoming node updates until the next tick during initialization.
+      await nextTick()
       // Measure the embedding container's font, which can differ from the document font.
       labelFont.value = `700 24px ${getComputedStyle(instance.vnode.el as Element).fontFamily}`
     })

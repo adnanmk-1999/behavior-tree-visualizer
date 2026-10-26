@@ -39,6 +39,8 @@
 
 - For application or viewer changes, run `npm test`, `npm run build`, and
   `npm run lint`; the build includes TypeScript checks.
+- With `npm run dev` running, open `/tests/behaviorTreeSizing.html` to check
+  initial label widths, click stability, and truncation with inherited fonts.
 - For package API, declarations, dependencies, or build changes, also run
   `npm run test:package` to check the archive in a separate consumer.
 - For exporter changes, install `scripts/requirements.txt` in `.venv` and run
