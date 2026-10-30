@@ -1,6 +1,6 @@
 {
   "name": "@adnanmk-1999/behavior-tree-viewer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Vue 3 viewer for BehaviorTree.CPP trees and execution statuses.",
   "repository": {
     "type": "git",

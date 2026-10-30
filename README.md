@@ -34,7 +34,7 @@ for this workflow are in [AGENTS.md](AGENTS.md).
 
 ## Library package
 
-The package is `@adnanmk-1999/behavior-tree-viewer`, currently version `0.1.0`.
+The package is `@adnanmk-1999/behavior-tree-viewer`, currently version `0.2.0`.
 Its publish destination is GitHub Packages at `https://npm.pkg.github.com`.
 An npmjs.com account is not needed for this registry.
 
@@ -50,7 +50,7 @@ TypeScript types. The package also exports `style.css`.
 ```sh
 npm run build:lib    # library JavaScript, CSS, and declarations in dist-library/
 npm run test:package # pack, install in a temporary consumer, check types, and build
-npm pack             # rebuild and create adnanmk-1999-behavior-tree-viewer-0.1.0.tgz
+npm pack             # rebuild and create adnanmk-1999-behavior-tree-viewer-0.2.0.tgz
 ```
 
 Vue 3.5+ is supplied by the consuming application. Vue Flow and Dagre remain
@@ -210,8 +210,8 @@ npm publish
 After publishing succeeds, tag the source commit:
 
 ```sh
-git tag -a v0.1.0 -m "Release 0.1.0"
-git push origin v0.1.0
+git tag -a v0.2.0 -m "Release 0.2.0"
+git push origin v0.2.0
 ```
 
 For later releases, use the version from `package.json` in both the tag and the
@@ -237,14 +237,14 @@ This file can be committed; it contains only the registry mapping, no token.
 Install the released version:
 
 ```sh
-npm install @adnanmk-1999/behavior-tree-viewer@0.1.0
+npm install @adnanmk-1999/behavior-tree-viewer@0.2.0
 ```
 
 Before publication, test with the local archive instead; no package login is
 needed for this installation:
 
 ```sh
-npm install /absolute/path/to/adnanmk-1999-behavior-tree-viewer-0.1.0.tgz
+npm install /absolute/path/to/adnanmk-1999-behavior-tree-viewer-0.2.0.tgz
 ```
 
 The viewer and XML parser require a browser. Import the stylesheet once and give
