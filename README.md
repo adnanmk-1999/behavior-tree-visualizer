@@ -1,12 +1,11 @@
-# Behavior Tree Visualizer
+[**Explore the live demo →**](https://adnanmk-1999.github.io/behavior-tree-visualizer/)
 
-A Vue 3 viewer for BehaviorTree.CPP trees and execution statuses. This repository
-contains the reusable viewer library and a standalone playground for inspecting
-trees, navigating subtrees, and replaying recorded status changes.
+# Behavior Tree Viewer
 
-## Run locally
+**See the structure. Follow the execution.**
 
-Use Node.js 24.12 or newer, or a compatible version listed in `package.json`.
+An interactive Vue 3 viewer for BehaviorTree.CPP trees. Explore nested branches,
+inspect node details, and follow execution statuses inside your own application.
 
 ```sh
 npm ci
@@ -165,41 +164,31 @@ it would block publishing entirely. See [GitHub's npm registry guide](https://do
 Create a **personal access token (classic)** in [GitHub token settings](https://github.com/settings/tokens)
 with `write:packages` and `read:packages` for publishing. Consumers only need
 `read:packages` and access to the package. See [GitHub package permissions](https://docs.github.com/en/packages/learn-github-packages/about-permissions-for-github-packages).
+[Installation](#installation) · [Quick start](#quick-start) · [API](#api) · [Dependencies](#dependencies) · [Contributing](#contributing)
 
-Run this once on each machine that needs package access:
+[![Behavior Tree Visualizer showing a robot behavior tree, highlighted running path, node statuses, and playback controls](https://raw.githubusercontent.com/adnanmk-1999/behavior-tree-visualizer/main/public/Behavior_Tree_Visualizer.png)](https://adnanmk-1999.github.io/behavior-tree-visualizer/)
 
-```sh
-npm login --scope=@adnanmk-1999 --auth-type=legacy --registry=https://npm.pkg.github.com
-```
+_The demo combines the viewer with subtree navigation and recorded playback.
+The package gives your application the viewer; you supply its data and timing._
 
-Enter your GitHub username and use the token as the password. Keep credentials in
-your user-level npm configuration, outside this repository. The GitHub CLI login
-used for `git push` is separate from package authentication.
+## What you can do
 
-### Release
+- **Explore the hierarchy.** Automatic layout, expandable branches, and subtree boundaries make nested trees easier to follow.
+- **Follow execution.** Display node statuses, highlight running paths, and focus on active branches.
+- **Inspect the details.** Select a node to see its attributes, category, and execution status.
+- **Navigate comfortably.** Pan, zoom, frame the diagram, and move between nodes with the keyboard.
+- **Fit your application.** Use CSS theme variables and a typed Vue API with static, recorded, or live data.
 
-Prepare version changes on `develop`, keeping `package.json` and
-`package-lock.json` in sync. For later patch releases, use
-`npm version patch --no-git-tag-version`; the release tag belongs on `main`.
-Commit and push the changes, then merge a pull request from `develop` into `main`.
+The viewer is read-only. Your application owns loading, connections, navigation,
+and playback timing; the component handles rendering and interaction.
 
-From a clean working tree, switch to the merged release and verify it:
+## Installation
 
-```sh
-git switch main
-git pull --ff-only origin main
-npm ci
-npm test
-npm run build
-npm run lint
-npm run test:package
-npm publish --dry-run
-git status --short
-```
-
-Confirm the dry run targets `https://npm.pkg.github.com`, contains the expected
-library files and license, and that the working tree is still clean. A dry run
-does not upload a package or prove that your account has publish access.
+The package is available from **GitHub Packages** as
+`@adnanmk-1999/behavior-tree-viewer`. Use Vue 3 (`^3.5.0`) and a modern browser.
+For installation and local development, Node.js 24.12+ is supported; see
+[package.json](https://github.com/adnanmk-1999/behavior-tree-visualizer/blob/main/package.json)
+for the full Node.js version range.
 
 For the first release, publish:
 
@@ -228,51 +217,72 @@ existing installations keep using the old package until updated.
 
 After publication, authenticate as above and add this scope mapping to the
 consuming application's `.npmrc` (beside its `package.json`):
+Add this scope mapping to your application's `.npmrc`, beside `package.json`:
 
 ```ini
 @adnanmk-1999:registry=https://npm.pkg.github.com
 ```
 
-This file can be committed; it contains only the registry mapping, no token.
-Install the released version:
+Authenticate with your GitHub username and a **personal access token (classic)**
+with `read:packages` and access to this package. Use the token at the password
+prompt; keep it in your user-level npm credentials, outside the repository.
+An npmjs.com account is not required. See [GitHub's authentication guide](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry#authenticating-to-github-packages).
 
 ```sh
 npm install @adnanmk-1999/behavior-tree-viewer@0.2.0
+npm login --scope=@adnanmk-1999 --auth-type=legacy --registry=https://npm.pkg.github.com
+npm install @adnanmk-1999/behavior-tree-viewer@0.1.0
 ```
 
-Before publication, test with the local archive instead; no package login is
-needed for this installation:
+To download the package as a `.tgz` archive after authenticating, run
+`npm pack @adnanmk-1999/behavior-tree-viewer@0.1.0`.
 
 ```sh
 npm install /absolute/path/to/adnanmk-1999-behavior-tree-viewer-0.2.0.tgz
 ```
+## Quick start
 
-The viewer and XML parser require a browser. Import the stylesheet once and give
-the viewer's parent a definite height:
+Import the component and stylesheet, parse your XML, and give the viewer a
+container with a definite height. The component and parser run in the browser;
+mount them on the client when using an SSR framework.
 
 ```vue
 <script setup lang="ts">
 import { shallowRef } from 'vue'
-import { BehaviorTreeViewer, parseBehaviorTree, type NodeStatusMap } from '@adnanmk-1999/behavior-tree-viewer'
+import {
+  BehaviorTreeViewer,
+  parseBehaviorTree,
+  type NodeStatusMap,
+} from '@adnanmk-1999/behavior-tree-viewer'
 import '@adnanmk-1999/behavior-tree-viewer/style.css'
 
-const treeDocument = parseBehaviorTree(`
+const document = parseBehaviorTree(`
   <root BTCPP_format="4">
-    <BehaviorTree ID="Demo">
-      <Action ID="Move" _uid="1"/>
+    <BehaviorTree ID="Delivery">
+      <Sequence _uid="1">
+        <Condition ID="IsReady" _uid="2"/>
+        <Action ID="MoveToGoal" _uid="3"/>
+      </Sequence>
     </BehaviorTree>
   </root>
 `)
-const tree = treeDocument.behaviorTrees[0]!
-const statuses = shallowRef<NodeStatusMap>(new Map([['1', 'RUNNING']]))
+const tree = document.behaviorTrees[0]!
+const statuses = shallowRef<NodeStatusMap>(
+  new Map([
+    ['1', 'RUNNING'],
+    ['2', 'SUCCESS'],
+    ['3', 'RUNNING'],
+  ]),
+)
 </script>
 
 <template>
   <div style="height: 600px">
     <BehaviorTreeViewer
+      class="my-tree"
       :tree="tree"
-      :definitions="treeDocument.behaviorTrees"
-      :node-models="treeDocument.nodeModels"
+      :definitions="document.behaviorTrees"
+      :node-models="document.nodeModels"
       :statuses="statuses"
     />
   </div>
@@ -286,14 +296,25 @@ inspection, legends, and branch expansion.
 The player's optional Live/Replay switch sits in its own toolbar above the
 diagram, outside the viewer canvas. Replay controls sit inside the viewport in a
 wide, low bar beside Tree Details, stacking below it on narrow canvases.
+For structured tree data, pass a `BehaviorTreeDefinition` directly; XML parsing
+is optional.
 
-`NodeStatusMap` is a `ReadonlyMap<string, ExecutionStatus>`. Keys are canonical
-unsigned decimal UIDs, such as `"1"`, rather than names or padded strings like
-`"0001"`. Values are `IDLE`, `RUNNING`, `SUCCESS`, `FAILURE`, or `SKIPPED`.
-Missing statuses appear as **Not observed**. To update a shallow-ref map:
+### Update execution statuses
+
+`NodeStatusMap` is a `ReadonlyMap<string, ExecutionStatus>`, keyed by node UID.
+Use canonical unsigned decimal strings such as `"3"`, rather than node names or
+padded strings such as `"0003"`.
+
+Supported statuses are `IDLE`, `RUNNING`, `SUCCESS`, `FAILURE`, and `SKIPPED`.
+Nodes absent from the map appear as **Not observed**. Replace a shallow-ref map
+when a new snapshot arrives:
 
 ```ts
-statuses.value = new Map([['1', 'SUCCESS']])
+statuses.value = new Map([
+  ['1', 'SUCCESS'],
+  ['2', 'SUCCESS'],
+  ['3', 'SUCCESS'],
+])
 ```
 
 The application owns its data connections and navigation. Use
@@ -370,87 +391,84 @@ mode and stays fixed while the graph pans and zooms; the surrounding app supplie
 no control markup.
 Click the speed button to cycle through 0.5×, 1×, 2×, and 4×, wrapping back to
 0.5× after 4×. The button displays the current speed and starts at 1×.
+The same interface works with a static snapshot, a playback controller, or live
+updates from your application's API or WebSocket connection.
 
-## Viewer controls
+## API
 
-| Action                            | Control                                                    |
-| --------------------------------- | ---------------------------------------------------------- |
-| Inspect a node                    | Click or Enter; Escape closes the inspector                |
-| Expand or collapse a branch       | Double-click, Space, or the node's plus/minus button       |
-| Navigate between nodes            | Arrow keys                                                 |
-| Pan                               | Drag the canvas or use W, A, S, D                          |
-| Zoom                              | Scroll, plus/minus keys, or the zoom buttons               |
-| Frame the diagram                 | Fit tree for an overview; Readable view for a legible root |
-| Open a subtree as a separate view | Open subtree separately in the inspector                   |
+### `BehaviorTreeViewer`
 
-Keyboard shortcuts apply while the canvas or a node has focus. The viewer is
-read-only: nodes and connections cannot be edited.
+| Prop          | Type                                | Purpose                                                       |
+| ------------- | ----------------------------------- | ------------------------------------------------------------- |
+| `tree`        | `BehaviorTreeDefinition`            | **Required.** The tree to display.                            |
+| `definitions` | `readonly BehaviorTreeDefinition[]` | **Required.** Definitions used to resolve subtree references. |
+| `nodeModels`  | `NodeCategoryMap`                   | Optional mapping of node type IDs to categories.              |
+| `statuses`    | `NodeStatusMap`                     | Optional UID-to-status map. Defaults to an empty map.         |
 
-Canvas controls also provide a running-path filter, collapsed/all/running subtree
-modes, and independent Subtree and Control highlighting. Subtrees start collapsed;
-manual branch choices override bulk modes until another bulk mode is selected.
+The **`open-subtree`** event emits the reference node without its children
+(`Omit<BehaviorTreeNode, 'children'>`). Handle it to navigate to another tree
+inside your application. Expanding a subtree within the current view is built in.
 
 In Replay mode the player adds Play/Pause, Reset, Previous/Next change, seeking, and
 0.5×/1×/2×/4× speeds. The package also provides an optional Live/Replay switch.
 The playground enables it, adds breadcrumbs, and starts in Replay; it has no live
 robot connection. Navigation preserves the current playback position.
+### `parseBehaviorTree(xml)`
 
-## Theming
+Returns a `BehaviorTreeDocument` containing `behaviorTrees`, `nodeModels`, and
+root `attributes`. It expects `<root BTCPP_format="4">` and throws for malformed
+XML or an invalid document structure. Definitions retain their document order;
+UIDs and attributes remain strings, and subtrees remain references.
 
-The viewer inherits the host font and measures it at mount, so load that font
-before mounting. It fills the supplied height and adapts to the container width.
-Vuetify is optional; inherited `--v-theme-*` RGB-channel variables are supported,
-with dark-theme fallbacks.
+The parser preserves expressions as data and never executes them. It does not
+load external includes or validate custom node schemas.
 
-Set `--bt-*` overrides directly on the viewer's `.bt-theme` root. Theme variables
-are defined in [workspace.css](src/assets/workspace.css); category and status
-styles are in [behaviorTreeAppearance.css](src/assets/behaviorTreeAppearance.css).
-See [DESIGN.md](DESIGN.md) for the visual contract. When mounting multiple Vue apps
-on one page, give each a distinct `app.config.idPrefix` for accessibility IDs.
+### TypeScript exports
 
-## XML and recordings
+- **Trees:** `BehaviorTreeDocument`, `BehaviorTreeDefinition`, `BehaviorTreeNode`, `SubTreeReference`.
+- **Categories:** `NodeCategory`, `NodeCategoryMap`.
+- **Statuses:** `NodeStatusMap`, `ExecutionStatus`, `DisplayStatus`.
 
-The parser expects `<root BTCPP_format="4">`. It retains definitions in document
-order, including repeated IDs and their `_fullpath` values. Node attributes and
-UIDs remain strings. SubTrees remain references; expressions and scripts are
-preserved as data and never executed.
+## Make it yours
 
-Subtree resolution uses the referenced ID and an explicit instance path when
-present. Missing or ambiguous references produce visible warnings or errors.
-The parser does not validate custom node schemas or load external includes.
+The viewer fills its container and inherits your application's font. Load the
+font before mounting so the layout can measure labels correctly. Customize the
+component in the quick-start example with CSS variables:
 
-To create playback JSON from a ROS 2 MCAP recording, use Python 3.10 or newer:
-
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r scripts/requirements.txt
-.venv/bin/python scripts/export_bt_events.py \
-  --bag /path/to/recording.mcap \
-  --xml public/tree.xml \
-  --output public/data/behavior-tree-events.json
+```css
+.my-tree {
+  --bt-background: #151b26;
+  --bt-surface: #202a38;
+  --bt-primary: #6ee7b7;
+}
 ```
 
-The exporter reads `/behavior_tree_log` using the recording's embedded schema;
-no ROS installation is required. It preserves transitions, sorts by event time,
-and checks UIDs against the supplied XML. Unmatched UIDs produce warnings and stay
-in the output. Absolute nanosecond timestamps remain strings to retain precision.
-The recording types are defined in [behaviorTreeEvents.ts](src/types/behaviorTreeEvents.ts).
+The default theme works without Vuetify. Inherited Vuetify `--v-theme-*` RGB
+variables are also supported. See the [theme variables](https://github.com/adnanmk-1999/behavior-tree-visualizer/blob/main/src/assets/workspace.css)
+and [category/status styles](https://github.com/adnanmk-1999/behavior-tree-visualizer/blob/main/src/assets/behaviorTreeAppearance.css)
+for additional overrides. Give separate Vue apps on the same page distinct
+`app.config.idPrefix` values for accessibility IDs.
 
-Each export handles one MCAP file and holds its extracted transitions in memory.
-It does not merge split bags or correct clock resets. Output is replaced atomically
-after successful extraction.
+<details>
+<summary><strong>Keyboard and canvas controls</strong></summary>
 
-Raw recordings stay local and are ignored by Git. The supplied XML and event JSON
-are approved demo fixtures. Files under `public/` are served by Vite and included
-in the deployed demo, where visitors can download them.
+| Action                      | Control                                              |
+| --------------------------- | ---------------------------------------------------- |
+| Inspect a node              | Click or Enter; Escape closes the inspector          |
+| Expand or collapse a branch | Double-click, Space, or the node's plus/minus button |
+| Navigate between nodes      | Arrow keys                                           |
+| Pan                         | Drag the canvas or use W, A, S, D                    |
+| Zoom                        | Scroll, plus/minus keys, or the zoom buttons         |
+| Frame the diagram           | Fit tree or Readable view                            |
+| Open a subtree separately   | Open subtree separately in the inspector             |
 
-## Checks
+Keyboard shortcuts apply while the canvas or a node has focus. The toolbar also
+provides a running-path filter, collapsed/all/running subtree modes, and
+independent Subtree and Control highlighting.
 
-```sh
-npm test
-npm run build
-npm run lint
-```
+</details>
+
+## Dependencies
 
 The build includes TypeScript checking. Run `npm run test:package` for changes to
 the public API, package configuration, or library build. With the dev server
@@ -459,21 +477,43 @@ against the supplied fixture.
 `/tests/behaviorTreePlayer.html` checks fixed live/replay modes, the package-owned
 switch, keyboard access, stepping, navigation, and missing/empty recordings. `/tests/behaviorTreeSizing.html`
 checks initial label widths and click stability with inherited fonts.
+Built on these projects:
 
-For recording-export changes, also run:
+| Project                                   | Package                                  | Role                                                                                 |
+| ----------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
+| [Vue 3](https://vuejs.org/)               | `vue` — peer dependency, `^3.5.0`        | Component rendering and reactive updates, using your application's Vue installation. |
+| [Vue Flow](https://vueflow.dev/)          | `@vue-flow/core` — dependency, `^1.48.2` | Interactive graph canvas, nodes, edges, pan, and zoom.                               |
+| [Dagre](https://github.com/dagrejs/dagre) | `@dagrejs/dagre` — dependency, `^3.1.1`  | Automatic top-to-bottom layout of the tree.                                          |
+
+Vue Flow and Dagre are installed with the package. TypeScript declarations and
+the viewer stylesheet are included. Development uses Vite, TypeScript, and
+`vue-tsc`.
+
+The subtree icon uses Pictogrammers' Material Design Icons; its
+[Apache 2.0 license and attribution](https://github.com/adnanmk-1999/behavior-tree-visualizer/blob/main/public/licenses/material-design-icons.txt)
+are included in the package.
+
+## Run the demo locally
 
 ```sh
-.venv/bin/python -m unittest discover -s tests -p 'test_*.py' -v
+git clone https://github.com/adnanmk-1999/behavior-tree-visualizer.git
+cd behavior-tree-visualizer
+npm ci
+npm run dev
 ```
 
-## Deploy the demo
+Open the URL printed by Vite. The playground uses the local viewer source and
+loads `public/tree.xml` with `public/data/behavior-tree-events.json`. It adds
+breadcrumbs, playback controls, seeking, and playback speeds. If the recording
+is unavailable, the tree can still be explored.
 
-The [GitHub Pages workflow](.github/workflows/deploy-pages.yml) deploys the
-standalone app, separately from publishing the npm package.
+## Contributing
 
-1. In repository **Settings → Pages**, choose **GitHub Actions** as the deployment source.
-2. In **Actions → Deploy demo to GitHub Pages**, run the workflow on `main`.
-3. After it succeeds, open the URL shown in the deployment or Pages settings.
+Bug reports, documentation improvements, and focused pull requests are welcome.
 
-Deployment is manual. The workflow checks the demo files, runs tests and type
-checking, and builds with the repository's Pages base path.
+1. Fork the repository if needed, and create a branch from **`develop`**.
+2. Make your change and run the relevant checks described in [AGENTS.md](https://github.com/adnanmk-1999/behavior-tree-visualizer/blob/main/AGENTS.md).
+3. Open a pull request targeting **`develop`**, with a short description of the change and how you verified it. Include a screenshot for visual changes.
+
+Use [GitHub Issues](https://github.com/adnanmk-1999/behavior-tree-visualizer/issues)
+to report a problem with reproduction steps and a small example tree when possible.
