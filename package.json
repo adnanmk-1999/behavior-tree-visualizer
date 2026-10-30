@@ -15,7 +15,9 @@
     "dist-library/index.d.ts",
     "dist-library/style.css",
     "dist-library/components/BehaviorTreeViewer.vue.d.ts",
+    "dist-library/components/BehaviorTreePlayer.vue.d.ts",
     "dist-library/utils/parseBehaviorTree.d.ts",
+    "dist-library/utils/parseBehaviorTreeEvents.d.ts",
     "dist-library/types/*.d.ts",
     "public/licenses/material-design-icons.txt"
   ],

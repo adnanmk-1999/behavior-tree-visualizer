@@ -24,10 +24,17 @@
 ## Project boundaries
 
 - Keep the reusable viewer and the standalone playground in this repository.
-  `src/App.vue` owns loading, navigation, and playback; it uses local viewer source.
-- `src/index.ts` is the public library entry point: the viewer, XML parser, and
-  tree/status types. The package also exports `style.css`. Keep layout utilities,
-  icons, and child components internal.
+  `src/App.vue` owns loading and navigation; it uses local player source. Host
+  applications supply live statuses. `BehaviorTreePlayer` owns replay timing
+  and transport, including the optional Live/Replay switch. Hosts must supply
+  `mode="live"` or `mode="replay"` (or an initialized `v-model:mode`) and may enable
+  `showModeSwitch`; the playground uses this package-owned switch
+  and supplies no viewport markup.
+  Replay controls form a wide, low viewport bar beside Tree Details; the mode
+  switch remains in the player's toolbar outside the canvas.
+- `src/index.ts` is the public library entry point: the viewer, player, XML and
+  recording parsers, and tree/status/recording types. The package also exports
+  `style.css`. Keep layout utilities, icons, and child components internal.
 - Vue is a peer dependency and stays external to the library bundle. Reuse the
   existing Vue Flow, Dagre, Vite, and `vue-tsc` tooling.
 - Keep demo output in `dist/` and library output in `dist-library/`. Include only

@@ -438,7 +438,11 @@ watch(graph, async (_, __, onCleanup) => {
                 @set-subtrees="setSubtrees"
                 @toggle-subtree-boundaries="showSubtreeBoundaries = !showSubtreeBoundaries"
                 @toggle-control-boundaries="showControlBoundaries = !showControlBoundaries"
-              />
+              >
+                <template v-if="$slots.playback" #playback>
+                  <slot name="playback" />
+                </template>
+              </ViewportOverlay>
             </div>
           </div>
           <NodeInspector
