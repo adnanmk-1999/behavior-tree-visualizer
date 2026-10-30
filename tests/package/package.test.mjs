@@ -17,6 +17,7 @@ test('packed viewer installs, type-checks and builds without repository aliases 
   )
   assert.deepEqual(archive.files.map(({ path }) => path).sort(), [
     'README.md',
+    'dist-library/components/BehaviorTreePlayer.vue.d.ts',
     'dist-library/components/BehaviorTreeViewer.vue.d.ts',
     'dist-library/index.d.ts',
     'dist-library/index.js',
@@ -24,6 +25,7 @@ test('packed viewer installs, type-checks and builds without repository aliases 
     'dist-library/types/behaviorTree.d.ts',
     'dist-library/types/behaviorTreeEvents.d.ts',
     'dist-library/utils/parseBehaviorTree.d.ts',
+    'dist-library/utils/parseBehaviorTreeEvents.d.ts',
     'package.json',
     'public/licenses/material-design-icons.txt',
   ])
@@ -55,7 +57,7 @@ test('packed viewer installs, type-checks and builds without repository aliases 
         `import * as api from '${archive.name}'; console.log(JSON.stringify(Object.keys(api)))`,
       ]),
     ),
-    ['BehaviorTreeViewer', 'parseBehaviorTree'],
+    ['BehaviorTreePlayer', 'BehaviorTreeViewer', 'parseBehaviorTree', 'parseBehaviorTreeEvents'],
   )
   await writeFile(
     join(consumer, 'index.html'),
@@ -68,19 +70,53 @@ test('packed viewer installs, type-checks and builds without repository aliases 
     join(consumer, 'main.ts'),
     `
 import { createApp, h, shallowRef } from 'vue'
-import { BehaviorTreeViewer, parseBehaviorTree, type NodeStatusMap } from '${archive.name}'
+import {
+  BehaviorTreeViewer, BehaviorTreePlayer, parseBehaviorTree, parseBehaviorTreeEvents,
+  type NodeStatusMap, type BehaviorTreeRecording, type PlaybackMode,
+} from '${archive.name}'
 import '${archive.name}/style.css'
 const doc = parseBehaviorTree('<root BTCPP_format="4"><BehaviorTree ID="Main"><Sequence _uid="1"><Action ID="Move" _uid="2"/></Sequence></BehaviorTree></root>')
 const statuses = shallowRef<NodeStatusMap>(new Map([['2', 'RUNNING']]))
 type Props = InstanceType<typeof BehaviorTreeViewer>['$props']
 const props: Props = { tree: doc.behaviorTrees[0]!, definitions: doc.behaviorTrees }
+const recording: BehaviorTreeRecording = parseBehaviorTreeEvents({
+  version: 1, sourceTopic: '/behavior_tree_log', startTimestampNs: '0', durationMs: 1000,
+  events: [
+    { index: 0, timestampNs: '0', offsetMs: 0, uid: '2', nodeName: 'Move', previousStatus: 'IDLE', currentStatus: 'RUNNING' },
+    { index: 1, timestampNs: '1000000000', offsetMs: 1000, uid: '2', nodeName: 'Move', previousStatus: 'RUNNING', currentStatus: 'SUCCESS' },
+  ],
+})
+type PlayerProps = InstanceType<typeof BehaviorTreePlayer>['$props']
+const mode = shallowRef<PlaybackMode>('replay')
+const playerProps: PlayerProps = { ...props, recording, statuses: statuses.value, mode: mode.value }
+// @ts-expect-error callers must explicitly select live or replay
+const missingMode: PlayerProps = { ...props, recording }
+// @ts-expect-error undefined is not a playback mode
+const undefinedMode: PlayerProps = { ...props, mode: undefined }
+// @ts-expect-error the player also requires a tree and definitions
+const missingPlayerProps: PlayerProps = {}
+// @ts-expect-error only live and replay modes are supported
+const invalidMode: PlaybackMode = 'record'
 // @ts-expect-error the viewer requires a tree and definitions
 const missingProps: Props = {}
 // @ts-expect-error status keys are string UIDs
 const invalidStatuses: NodeStatusMap = new Map([[2, 'RUNNING']])
 void missingProps
 void invalidStatuses
-createApp({ render: () => h(BehaviorTreeViewer, { ...props, statuses: statuses.value }) }).mount('#app')
+void missingPlayerProps
+void missingMode
+void undefinedMode
+void invalidMode
+createApp({ render: () => h('div', [
+  h(BehaviorTreeViewer, { ...props, statuses: statuses.value }),
+  h(BehaviorTreePlayer, {
+    ...playerProps, statuses: statuses.value, mode: mode.value,
+  }),
+  h(BehaviorTreePlayer, {
+    ...playerProps, showModeSwitch: true, mode: mode.value,
+    'onUpdate:mode': (value: PlaybackMode) => { mode.value = value },
+  }),
+]) }).mount('#app')
 document.querySelector('#update')!.addEventListener('click', () => {
   statuses.value = new Map([['2', 'SUCCESS']])
 })

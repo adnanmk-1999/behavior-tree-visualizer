@@ -1,6 +1,6 @@
 {
   "name": "@adnanmk-1999/behavior-tree-viewer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Vue 3 viewer for BehaviorTree.CPP trees and execution statuses.",
   "repository": {
     "type": "git",
@@ -15,7 +15,9 @@
     "dist-library/index.d.ts",
     "dist-library/style.css",
     "dist-library/components/BehaviorTreeViewer.vue.d.ts",
+    "dist-library/components/BehaviorTreePlayer.vue.d.ts",
     "dist-library/utils/parseBehaviorTree.d.ts",
+    "dist-library/utils/parseBehaviorTreeEvents.d.ts",
     "dist-library/types/*.d.ts",
     "public/licenses/material-design-icons.txt"
   ],

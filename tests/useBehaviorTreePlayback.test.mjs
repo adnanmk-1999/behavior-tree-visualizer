@@ -220,3 +220,94 @@ test('recording replacement and scope disposal cancel frames and reset state', (
   assert.equal(p.frames.size, 0)
   assert.equal(p.state.isPlaying, false)
 })
+
+test('Next change pauses at the next timestamp and applies simultaneous changes together', (t) => {
+  const p = setup(
+    t,
+    recording([
+      [0, '1', 'IDLE'],
+      [500, '1', 'RUNNING'],
+      [500, '2', 'SUCCESS'],
+      [900, '1', 'SUCCESS'],
+    ]),
+  )
+  p.play()
+  p.frame(100)
+  p.clock(600)
+  p.stepForward()
+  assert.equal(
+    p.state.positionMs,
+    500,
+    'Step from the displayed position, without skipping events between frames',
+  )
+  assert.equal(p.state.isPlaying, false)
+  assert.equal(p.frames.size, 0)
+  assert.deepEqual(
+    [...p.statuses],
+    [
+      ['1', 'RUNNING'],
+      ['2', 'SUCCESS'],
+    ],
+  )
+  p.stepForward()
+  assert.equal(p.state.positionMs, 900)
+  assert.equal(p.statuses.get('1'), 'SUCCESS')
+  p.stepForward()
+  assert.equal(p.state.positionMs, 900)
+  p.seek(200)
+  p.stepForward()
+  assert.equal(p.state.positionMs, 500)
+})
+
+test('Previous change restores the previous distinct timestamp and pauses at the displayed position', (t) => {
+  const p = setup(
+    t,
+    recording([
+      [0, '1', 'IDLE'],
+      [500, '1', 'RUNNING'],
+      [500, '2', 'SUCCESS'],
+      [900, '1', 'SUCCESS'],
+    ]),
+  )
+  const map = p.statuses
+  p.seek(900)
+  p.stepBackward()
+  assert.equal(p.state.positionMs, 500)
+  assert.deepEqual(
+    [...p.statuses],
+    [
+      ['1', 'RUNNING'],
+      ['2', 'SUCCESS'],
+    ],
+  )
+  p.stepBackward()
+  assert.equal(p.state.positionMs, 0)
+  assert.deepEqual([...p.statuses], [['1', 'IDLE']])
+  p.stepBackward()
+  assert.equal(p.state.positionMs, 0)
+  p.seek(750)
+  p.play()
+  p.clock(1000)
+  p.stepBackward()
+  assert.equal(p.state.positionMs, 500)
+  assert.equal(p.state.isPlaying, false)
+  assert.equal(p.frames.size, 0)
+  p.stepForward()
+  assert.equal(p.state.positionMs, 900)
+  p.stepBackward()
+  assert.equal(p.state.positionMs, 500)
+  assert.equal(p.statuses, map)
+})
+
+test('Stepping is safe for absent, empty and instantaneous recordings', (t) => {
+  const p = setup(t, null)
+  for (const input of [null, recording(), recording([[0, '1', 'SUCCESS']])]) {
+    p.source.value = input
+    p.stepForward()
+    p.stepBackward()
+    assert.equal(p.state.positionMs, 0)
+    assert.equal(p.state.isPlaying, false)
+    assert.equal(p.frames.size, 0)
+  }
+  assert.equal(p.statuses.get('1'), 'SUCCESS')
+})

@@ -75,7 +75,7 @@ onBeforeUnmount(() => {
     @pointerover="tooltipsDismissed = false"
     @focusin="tooltipsDismissed = false"
   >
-    <div class="viewport-left">
+    <div class="viewport-left" :class="{ 'has-playback': !!$slots.playback }">
       <section class="viewport-status" aria-label="Tree Details">
         <button
           class="status-header"
@@ -115,6 +115,9 @@ onBeforeUnmount(() => {
         </div>
       </section>
       <BehaviorTreeLegend />
+      <div v-if="$slots.playback" class="viewport-playback">
+        <slot name="playback" />
+      </div>
     </div>
     <ViewportHelp class="viewport-info" />
 
@@ -222,6 +225,7 @@ onBeforeUnmount(() => {
 }
 .viewport-status,
 .viewport-left :deep(.graph-legend),
+.viewport-playback,
 .viewport-info,
 .button-group {
   pointer-events: auto;
@@ -237,12 +241,32 @@ onBeforeUnmount(() => {
   top: 8px;
   left: 8px;
   max-height: calc(100% - 60px);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-areas: 'details' 'legend';
   gap: 8px;
+  overflow: auto;
+}
+.viewport-left.has-playback {
+  width: calc(100% - 56px);
+  max-width: calc(100% - 56px);
+  grid-template-areas: 'details playback' 'legend playback';
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+}
+.viewport-left :deep(.graph-legend) {
+  grid-area: legend;
+  width: max-content;
+}
+.viewport-playback {
+  grid-area: playback;
+  align-self: start;
+  max-width: 100%;
+  min-width: 0;
+  container: bt-playback / inline-size;
 }
 .viewport-status {
+  grid-area: details;
   width: 100%;
+  max-width: calc(100cqw - 64px);
   min-height: 36px;
   flex-shrink: 0;
   display: flex;
@@ -398,6 +422,14 @@ onBeforeUnmount(() => {
   .overlay-button {
     flex-basis: 28px;
     width: 28px;
+  }
+}
+@container bt-canvas (max-width: 880px) {
+  .viewport-left.has-playback {
+    grid-template-areas: 'details' 'playback' 'legend';
+    grid-template-columns: minmax(0, 1fr);
+    width: calc(100% - 16px);
+    max-width: calc(100% - 16px);
   }
 }
 @container bt-canvas (max-width: 340px) {

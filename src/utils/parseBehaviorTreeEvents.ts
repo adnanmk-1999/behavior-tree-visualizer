@@ -4,7 +4,7 @@ import type {
   BehaviorTreeRecording,
   ExecutionStatus,
   RecordingMetadata,
-} from '@/types/behaviorTreeEvents'
+} from '../types/behaviorTreeEvents'
 import { normalizeNodeUid } from './playbackState.ts'
 
 function assert(condition: unknown, message: string): asserts condition {

@@ -89,6 +89,21 @@ export function useBehaviorTreePlayback(recording: Ref<BehaviorTreeRecording | n
     seek(0)
   }
 
+  function stepForward() {
+    stop()
+    const next = recording.value?.events[nextEventIndex]
+    if (next) seek(next.offsetMs)
+  }
+
+  function stepBackward() {
+    stop()
+    const events = recording.value?.events ?? []
+    for (let index = nextEventIndex - 1; index >= 0; index--) {
+      const previous = events[index]!
+      if (previous.offsetMs < state.positionMs) return seek(previous.offsetMs)
+    }
+  }
+
   function setSpeed(value: number) {
     const speed = PLAYBACK_SPEEDS.find((candidate) => candidate === value)
     if (speed === undefined || speed === state.speed) return
@@ -122,6 +137,8 @@ export function useBehaviorTreePlayback(recording: Ref<BehaviorTreeRecording | n
     pause,
     seek,
     reset,
+    stepForward,
+    stepBackward,
     setSpeed,
   }
 }

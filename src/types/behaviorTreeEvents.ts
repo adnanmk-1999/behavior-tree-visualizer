@@ -2,6 +2,7 @@ export const EXECUTION_STATUSES = ['IDLE', 'RUNNING', 'SUCCESS', 'FAILURE', 'SKI
 export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number]
 export type DisplayStatus = ExecutionStatus | 'UNOBSERVED'
 export type NodeStatusMap = ReadonlyMap<string, ExecutionStatus>
+export type PlaybackMode = 'live' | 'replay'
 
 export interface BehaviorTreeEvent {
   index: number

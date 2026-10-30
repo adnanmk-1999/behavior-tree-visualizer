@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, shallowRef } from 'vue'
-import BehaviorTreeViewer from '@/components/BehaviorTreeViewer.vue'
-import PlaybackControls from '@/components/PlaybackControls.vue'
+import BehaviorTreePlayer from '@/components/BehaviorTreePlayer.vue'
 import AppIcon from '@/components/AppIcon.vue'
-import { useBehaviorTreePlayback } from '@/composables/useBehaviorTreePlayback'
 import { useTreeNavigation } from '@/composables/useTreeNavigation'
 import type { BehaviorTreeDefinition, BehaviorTreeDocument } from '@/types/behaviorTree'
 import { parseBehaviorTree } from '@/utils/parseBehaviorTree'
 import { loadBehaviorTreeEvents } from '@/utils/parseBehaviorTreeEvents'
-import type { BehaviorTreeRecording } from '@/types/behaviorTreeEvents'
+import type { BehaviorTreeRecording, PlaybackMode } from '@/types/behaviorTreeEvents'
 import '@/assets/workspace.css'
 
 const parsedDocument = shallowRef<BehaviorTreeDocument | null>(null)
@@ -21,7 +19,7 @@ const { history, currentTree, navigationError, openSubTree, goTo } =
 const recording = shallowRef<BehaviorTreeRecording | null>(null)
 const recordingLoading = ref(true)
 const recordingError = ref<string | null>(null)
-const playback = useBehaviorTreePlayback(recording)
+const mode = ref<PlaybackMode>('replay')
 const recordingRequest = new AbortController()
 const xmlUrl = `${import.meta.env.BASE_URL}tree.xml`
 
@@ -161,38 +159,23 @@ onMounted(async () => {
 
         <p v-if="navigationError" class="notice notice-error" role="alert">{{ navigationError }}</p>
         <template v-if="currentTree">
-          <section class="recording-section" aria-label="Recording playback">
-            <PlaybackControls
-              :state="playback.state"
-              :disabled="recordingLoading || !recording?.events.length"
-              :event-count="recording?.events.length"
-              @play="playback.play"
-              @pause="playback.pause"
-              @reset="playback.reset"
-              @seek="playback.seek"
-              @set-speed="playback.setSpeed"
-            />
-            <p v-if="recordingLoading" class="recording-message" role="status">
-              Loading recorded execution…
-            </p>
-            <p v-else-if="recordingError" class="notice notice-error" role="alert">
-              {{ recordingError }}
-            </p>
-            <p v-else-if="!recording?.events.length" class="recording-message" role="status">
-              No status transitions in this recording. You can still explore the tree.
-            </p>
-            <p v-if="recording?.unmatchedUids?.length" class="notice" role="status">
-              {{ recording.unmatchedUids.length }} recorded UIDs are missing from this XML. Their
-              events are retained but cannot highlight a matching node.
-            </p>
-          </section>
+          <p v-if="mode === 'live'" class="recording-message" role="status">
+            This playground has no live connection. Use Replay to inspect the recording.
+          </p>
+          <p v-else-if="recordingLoading" class="recording-message" role="status">
+            Loading recorded execution…
+          </p>
+          <p v-else-if="recordingError" class="notice notice-error" role="alert">
+            {{ recordingError }}
+          </p>
           <div id="tree-workspace" tabindex="-1">
-            <BehaviorTreeViewer
-              :key="JSON.stringify([currentTree.ID, currentTree._fullpath])"
+            <BehaviorTreePlayer
+              v-model:mode="mode"
+              show-mode-switch
               :tree="currentTree"
               :definitions="parsedDocument.behaviorTrees"
               :node-models="parsedDocument.nodeModels"
-              :statuses="playback.statuses"
+              :recording="recording"
               @open-subtree="openSubTree"
             />
           </div>
@@ -479,10 +462,6 @@ h1 {
 .instance-path code {
   overflow-wrap: anywhere;
   min-width: 0;
-}
-
-.recording-section {
-  margin-bottom: 0.75rem;
 }
 
 .recording-message {

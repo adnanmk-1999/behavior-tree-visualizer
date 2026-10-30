@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Behavior Tree player checks</title>
+  </head>
+  <body>
+    <h1>Behavior Tree player checks</h1>
+    <pre id="result" role="status">Running…</pre>
+    <div id="player" style="height: 700px"></div>
+    <script type="module">
+      import { createApp, h, nextTick, ref, shallowRef } from 'vue'
+      import { BehaviorTreePlayer, parseBehaviorTree, parseBehaviorTreeEvents } from '/src/index.ts'
+      import { recording } from './helpers/behaviorTreeEvents.mjs'
+
+      const result = document.querySelector('#result')
+      const container = document.querySelector('#player')
+      const doc = parseBehaviorTree(`<root BTCPP_format="4">
+        <BehaviorTree ID="Main"><Sequence _uid="1"><Action ID="Move" _uid="2"/></Sequence></BehaviorTree>
+        <BehaviorTree ID="Child"><Action ID="Wait" _uid="3"/></BehaviorTree>
+      </root>`)
+      const mode = ref('replay')
+      const showModeSwitch = ref(false)
+      const tree = shallowRef(doc.behaviorTrees[0])
+      const statuses = shallowRef(new Map([['2', 'FAILURE']]))
+      const source = shallowRef(
+        parseBehaviorTreeEvents(
+          recording([
+            [0, '2', 'IDLE'],
+            [500, '2', 'RUNNING'],
+            [500, '3', 'RUNNING'],
+            [1000, '2', 'SUCCESS'],
+          ]),
+        ),
+      )
+      let checks = 0
+      let app
+      function assert(condition, message) {
+        if (!condition) throw new Error(message)
+        checks++
+      }
+      async function settle() {
+        await nextTick()
+        await new Promise(requestAnimationFrame)
+        await new Promise(requestAnimationFrame)
+      }
+      const button = (label) =>
+        [...container.querySelectorAll('.playback-controls button')].find(
+          (element) => (element.getAttribute('aria-label') || element.textContent.trim()) === label,
+        )
+      const status = (uid) =>
+        container.querySelector(`[data-id="${uid}"] [data-status]`)?.dataset.status
+      const position = () => Number(container.querySelector('input[type="range"]').value)
+      const tab = (value) => container.querySelector(`[role="tab"][id$="-${value}"]`)
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+      const pointer = (target, type, pointerId = 1) =>
+        target.dispatchEvent(
+          new PointerEvent(type, { bubbles: true, pointerId, isPrimary: true, button: 0 }),
+        )
+      function release(label) {
+        pointer(window, 'pointerup')
+        button(label).dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+      }
+
+      try {
+        app = createApp({
+          render: () =>
+            h(BehaviorTreePlayer, {
+              tree: tree.value,
+              definitions: doc.behaviorTrees,
+              recording: source.value,
+              statuses: statuses.value,
+              mode: mode.value,
+              showModeSwitch: showModeSwitch.value,
+              'onUpdate:mode': (value) => {
+                mode.value = value
+              },
+            }),
+        })
+        app.mount(container)
+        await settle()
+        assert(status('2') === 'IDLE', 'Replay starts with recorded statuses')
+        assert(
+          !button('Previous change').disabled,
+          'Previous change keeps its normal state at the beginning',
+        )
+        button('Previous change').click()
+        await settle()
+        assert(
+          position() === 0 && status('2') === 'IDLE',
+          'Previous change at the beginning is a safe no-op',
+        )
+        assert(
+          [...container.querySelectorAll('.playback-actions button')]
+            .map((element) => element.getAttribute('aria-label'))
+            .join(',') === 'Previous change,Play,Next change',
+          'Play sits between Previous change and Next change',
+        )
+        assert(
+          container.querySelector('.speed-control').getBoundingClientRect().right <=
+            button('Reset').getBoundingClientRect().left,
+          'Reset sits after the speed control',
+        )
+        const speedButton = container.querySelector('.speed-control')
+        for (const expected of [2, 4, 0.5, 1]) {
+          speedButton.click()
+          await settle()
+          assert(
+            speedButton.textContent.trim() === `${expected}×` &&
+              speedButton.getAttribute('aria-label') === `Playback speed ${expected}×`,
+            `Speed button cycles to ${expected}× with an accessible name`,
+          )
+        }
+        assert(
+          !button('Play').textContent.trim() && button('Play').title === 'Play',
+          'Play is icon-only with an accessible label and tooltip',
+        )
+        assert(
+          container
+            .querySelector('.graph-canvas')
+            .contains(container.querySelector('.playback-controls')),
+          'Replay controls are inside the package viewport',
+        )
+        assert(
+          !container.querySelector('[role="tablist"]'),
+          'A replay app has no built-in source switch',
+        )
+        button('Next change').click()
+        await settle()
+        assert(
+          position() === 500 && status('2') === 'RUNNING',
+          'Next change seeks and updates the diagram',
+        )
+        button('Previous change').click()
+        await settle()
+        assert(position() === 0 && status('2') === 'IDLE', 'Previous change rewinds the diagram')
+
+        const originalSource = source.value
+        source.value = parseBehaviorTreeEvents(
+          recording(
+            Array.from({ length: 201 }, (_, index) => [
+              index * 500,
+              '2',
+              index % 2 ? 'RUNNING' : 'IDLE',
+            ]),
+          ),
+        )
+        await settle()
+        for (let index = 0; index < 3; index++) {
+          pointer(button('Next change'), 'pointerdown')
+          release('Next change')
+        }
+        await settle()
+        assert(position() === 1500, 'Repeated short clicks each advance exactly one change')
+        pointer(button('Next change'), 'pointerdown')
+        await wait(650)
+        await settle()
+        const forwardPosition = position()
+        assert(forwardPosition >= 2500, 'Holding Next change keeps advancing')
+        release('Next change')
+        await wait(450)
+        await settle()
+        assert(position() === forwardPosition, 'Release stops repetition without an extra click')
+        pointer(button('Previous change'), 'pointerdown')
+        await wait(650)
+        await settle()
+        const backwardPosition = position()
+        assert(
+          backwardPosition <= forwardPosition - 1000,
+          'Holding Previous change keeps rewinding',
+        )
+        release('Previous change')
+        await wait(450)
+        assert(position() === backwardPosition, 'Backward repetition stops on release')
+        button('Next change').click()
+        await settle()
+        assert(
+          position() === backwardPosition + 500,
+          'Keyboard-style activation works after a hold',
+        )
+        for (const [target, type] of [
+          [window, 'pointerup'],
+          [window, 'pointercancel'],
+          [button('Next change'), 'pointerleave'],
+          [window, 'blur'],
+        ]) {
+          const before = position()
+          pointer(button('Next change'), 'pointerdown')
+          if (type === 'blur') target.dispatchEvent(new Event(type))
+          else pointer(target, type)
+          await wait(450)
+          assert(position() === before, `${type} cancels a pending hold`)
+        }
+        pointer(button('Next change'), 'pointerdown')
+        pointer(window, 'pointerup', 2)
+        await wait(450)
+        await settle()
+        assert(position() >= backwardPosition + 1000, 'Another pointer cannot end the active hold')
+        pointer(window, 'pointerup')
+        for (const label of ['Next change', 'Previous change']) {
+          const timeline = container.querySelector('input[type="range"]')
+          timeline.value = 50000
+          timeline.dispatchEvent(new Event('input', { bubbles: true }))
+          await settle()
+          pointer(button(label), 'pointerdown')
+          await wait(500)
+          const initialPosition = position()
+          assert(
+            Math.abs(initialPosition - 50000) <= 1500,
+            `${label} starts each new hold at the slow rate`,
+          )
+          await wait(1000)
+          const middlePosition = position()
+          await wait(1000)
+          const laterPosition = position()
+          const earlySteps = Math.abs(middlePosition - initialPosition) / 500
+          const laterSteps = Math.abs(laterPosition - middlePosition) / 500
+          assert(
+            earlySteps > 0 && laterSteps >= earlySteps * 1.5,
+            `${label} accelerates during equal-length hold intervals`,
+          )
+          await wait(1000)
+          const cappedPosition = position()
+          const cappedSteps = Math.abs(cappedPosition - laterPosition) / 500
+          assert(
+            cappedSteps >= 30 && cappedSteps <= 42,
+            `${label} levels off at a bounded repeat rate`,
+          )
+          release(label)
+          await wait(450)
+          assert(
+            position() === cappedPosition,
+            `${label} stops immediately after an accelerated hold`,
+          )
+        }
+        pointer(button('Next change'), 'pointerdown')
+        mode.value = 'live'
+        await settle()
+        mode.value = 'replay'
+        await settle()
+        const resumedPosition = position()
+        await wait(450)
+        assert(position() === resumedPosition, 'Leaving Replay cancels the hold on unmount')
+        pointer(button('Next change'), 'pointerdown')
+        source.value = null
+        await settle()
+        source.value = originalSource
+        await settle()
+        await wait(450)
+        assert(position() === 0, 'Disabling transport cancels the hold before a new recording')
+
+        button('Next change').click()
+        await settle()
+        tree.value = doc.behaviorTrees[1]
+        await settle()
+        assert(
+          position() === 500 && status('3') === 'RUNNING',
+          'Changing trees preserves playback and tied events',
+        )
+        tree.value = doc.behaviorTrees[0]
+        button('Play').click()
+        await settle()
+        assert(button('Pause'), 'Replay starts playing')
+        mode.value = 'live'
+        await settle()
+        assert(
+          mode.value === 'live' && !container.querySelector('.playback-controls'),
+          'Live hides replay controls',
+        )
+        assert(status('2') === 'FAILURE', 'Live uses host statuses')
+        assert(
+          !container.querySelector('[role="tablist"]'),
+          'A live app has no built-in source switch',
+        )
+        statuses.value = new Map([['2', 'SKIPPED']])
+        await settle()
+        assert(status('2') === 'SKIPPED', 'Live receives updated host statuses')
+        mode.value = 'replay'
+        await settle()
+        assert(button('Play'), 'Returning to Replay stays paused')
+        assert(
+          position() >= 500 && position() < 1000 && status('2') === 'RUNNING',
+          'Replay retains its own position and statuses',
+        )
+        button('Next change').click()
+        await settle()
+        assert(
+          position() === 1000 && status('2') === 'SUCCESS',
+          'Next change reaches the final state',
+        )
+        assert(!button('Next change').disabled, 'Next change keeps its normal state at the end')
+        button('Next change').click()
+        await settle()
+        assert(
+          position() === 1000 && status('2') === 'SUCCESS',
+          'Next change at the end is a safe no-op',
+        )
+        source.value = null
+        await settle()
+        assert(container.querySelector('fieldset').disabled, 'Missing recording disables transport')
+        assert(
+          status('2') === 'UNOBSERVED' && position() === 0,
+          'Missing recording clears replay statuses',
+        )
+        source.value = parseBehaviorTreeEvents(recording([[0, '2', 'SUCCESS']]))
+        await settle()
+        assert(
+          status('2') === 'SUCCESS' && !button('Next change').disabled,
+          'Instant recording renders without stepping',
+        )
+        source.value = parseBehaviorTreeEvents(recording())
+        await settle()
+        assert(
+          container.querySelector('fieldset').disabled && status('2') === 'UNOBSERVED',
+          'Empty recording is safe',
+        )
+        mode.value = 'live'
+        await settle()
+        assert(
+          !container.querySelector('.playback-controls') && status('2') === 'SKIPPED',
+          'Explicit Live mode uses host statuses without replay controls',
+        )
+        showModeSwitch.value = true
+        await settle()
+        assert(
+          tab('live')?.getAttribute('aria-selected') === 'true',
+          'The package supplies the optional mode switch',
+        )
+        const switchBounds = container.querySelector('.playback-mode').getBoundingClientRect()
+        const canvasBounds = container.querySelector('.graph-canvas').getBoundingClientRect()
+        assert(
+          !tab('live').closest('.bt-viewer') && switchBounds.bottom <= canvasBounds.top,
+          'The package mode switch sits above and outside the diagram',
+        )
+        tab('replay').click()
+        await settle()
+        assert(
+          mode.value === 'replay' && container.querySelector('.playback-controls'),
+          'Package switch updates the host model and transport',
+        )
+        tab('replay').focus()
+        tab('replay').dispatchEvent(
+          new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }),
+        )
+        await settle()
+        assert(
+          mode.value === 'live' && document.activeElement === tab('live'),
+          'Package tabs support arrow keys and focus',
+        )
+        tab('live').dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }))
+        await settle()
+        assert(
+          mode.value === 'replay' && document.activeElement === tab('replay'),
+          'End selects Replay',
+        )
+        assert(
+          tab('replay').getAttribute('aria-selected') === 'true' && tab('live').tabIndex === -1,
+          'Tabs expose selection and one tab stop',
+        )
+        showModeSwitch.value = false
+        await settle()
+        assert(
+          !container.querySelector('[role="tablist"]') &&
+            container.querySelector('.playback-controls'),
+          'Hiding the switch preserves the selected mode',
+        )
+        app.unmount()
+        app = createApp({
+          render: () =>
+            h(BehaviorTreePlayer, {
+              tree: doc.behaviorTrees[0],
+              definitions: doc.behaviorTrees,
+              recording: source.value,
+              mode: 'live',
+              showModeSwitch: true,
+            }),
+        })
+        app.mount(container)
+        await settle()
+        assert(
+          tab('live')?.getAttribute('aria-selected') === 'true',
+          'Unbound player starts in the explicitly supplied Live mode',
+        )
+        tab('replay').click()
+        await settle()
+        assert(
+          tab('replay').getAttribute('aria-selected') === 'true' &&
+            container.querySelector('.playback-controls'),
+          'Package manages mode without host state or markup',
+        )
+        result.textContent = `PASS: ${checks} assertions. Fixed modes, package-owned switch, keyboard access, stepping, hold acceleration and cancellation, navigation, and empty recordings.`
+      } catch (error) {
+        result.textContent = `FAIL: ${error.message}`
+        throw error
+      }
+    </script>
+  </body>
+</html>
