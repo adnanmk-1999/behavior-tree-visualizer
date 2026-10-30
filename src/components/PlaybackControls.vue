@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useId } from 'vue'
+import { computed, onBeforeUnmount, onMounted, useId, watch } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
 import { PLAYBACK_SPEEDS } from '@/types/behaviorTreeEvents'
 import type { PlaybackState } from '@/types/behaviorTreeEvents'
@@ -7,198 +7,225 @@ import '@/assets/workspace.css'
 
 const timelineId = useId()
 
-defineProps<{ state: Readonly<PlaybackState>; disabled: boolean; eventCount?: number }>()
-defineEmits<{ play: []; pause: []; reset: []; seek: [timeMs: number]; setSpeed: [speed: number] }>()
+const props = defineProps<{ state: Readonly<PlaybackState>; disabled: boolean }>()
+const nextSpeed = computed(
+  () => PLAYBACK_SPEEDS[(PLAYBACK_SPEEDS.indexOf(props.state.speed) + 1) % PLAYBACK_SPEEDS.length]!,
+)
+const playLabel = computed(() =>
+  props.state.isPlaying
+    ? 'Pause'
+    : props.state.durationMs > 0 && props.state.positionMs >= props.state.durationMs
+      ? 'Replay'
+      : 'Play',
+)
+defineEmits<{
+  play: []
+  pause: []
+  reset: []
+  stepForward: []
+  stepBackward: []
+  seek: [timeMs: number]
+  setSpeed: [speed: number]
+}>()
+
+let repeatTimer: ReturnType<typeof setTimeout> | undefined
+let activePointerId: number | null = null
+let repeated = false
+
+function stopRepeating() {
+  clearTimeout(repeatTimer)
+  repeatTimer = undefined
+  activePointerId = null
+}
+
+function releasePointer(event: PointerEvent) {
+  if (event.pointerId === activePointerId) stopRepeating()
+}
+
+function startRepeating(event: PointerEvent, emitStep: () => void) {
+  if (props.disabled || !event.isPrimary || event.button !== 0 || activePointerId !== null) return
+  activePointerId = event.pointerId
+  repeated = false
+  const startedAt = performance.now()
+  function repeat() {
+    repeated = true
+    emitStep()
+    const elapsedSeconds = Math.max(0, performance.now() - startedAt - 400) / 1000
+    repeatTimer = setTimeout(repeat, Math.max(25, 100 / 2 ** elapsedSeconds))
+  }
+  repeatTimer = setTimeout(repeat, 400)
+}
+
+function step(event: MouseEvent, emitStep: () => void) {
+  // A held pointer already stepped; its release must not add another step.
+  if (!repeated || event.detail === 0) emitStep()
+  repeated = false
+}
+
+watch(() => props.disabled, stopRepeating)
+onMounted(() => {
+  window.addEventListener('pointerup', releasePointer)
+  window.addEventListener('pointercancel', releasePointer)
+  window.addEventListener('blur', stopRepeating)
+})
+onBeforeUnmount(() => {
+  stopRepeating()
+  window.removeEventListener('pointerup', releasePointer)
+  window.removeEventListener('pointercancel', releasePointer)
+  window.removeEventListener('blur', stopRepeating)
+})
 
 function seconds(timeMs: number) {
-  return (timeMs / 1000).toFixed(3)
+  return (timeMs / 1000).toFixed(2)
 }
 </script>
 
 <template>
   <fieldset class="playback-controls bt-theme" :disabled="disabled">
     <legend class="sr-only">Recorded execution</legend>
-    <div class="recording-heading">
-      <div class="recording-label">
-        <strong>Recorded execution</strong>
-        <span v-if="eventCount !== undefined">{{ eventCount.toLocaleString() }} transitions</span>
-      </div>
-      <span class="transport-status" :class="{ playing: state.isPlaying }">
-        {{
-          disabled
-            ? 'Unavailable'
-            : state.isPlaying
-              ? 'Playing'
-              : state.durationMs > 0 && state.positionMs >= state.durationMs
-                ? 'Finished'
-                : 'Paused'
-        }}
-      </span>
-    </div>
-    <div class="transport-strip">
-      <div class="playback-actions">
-        <button
-          type="button"
-          class="ui-button button-primary play-button"
-          :disabled="state.durationMs === 0"
-          @click="state.isPlaying ? $emit('pause') : $emit('play')"
-        >
-          <AppIcon
-            :name="
-              state.isPlaying
-                ? 'pause'
-                : state.durationMs > 0 && state.positionMs >= state.durationMs
-                  ? 'reset'
-                  : 'play'
-            "
-          />
-          {{
+    <div class="playback-actions">
+      <button
+        type="button"
+        class="ui-button transport-button step-button"
+        aria-label="Previous change"
+        title="Pause and jump to the previous recorded status change. Hold to step progressively faster."
+        @pointerdown="startRepeating($event, () => $emit('stepBackward'))"
+        @pointerleave="releasePointer"
+        @click="step($event, () => $emit('stepBackward'))"
+      >
+        <AppIcon name="previous" />
+      </button>
+      <button
+        type="button"
+        class="ui-button button-primary transport-button"
+        :aria-label="playLabel"
+        :title="playLabel"
+        :disabled="state.durationMs === 0"
+        @click="state.isPlaying ? $emit('pause') : $emit('play')"
+      >
+        <AppIcon
+          :name="
             state.isPlaying
-              ? 'Pause'
+              ? 'pause'
               : state.durationMs > 0 && state.positionMs >= state.durationMs
-                ? 'Replay'
-                : 'Play'
-          }}
-        </button>
-        <button
-          type="button"
-          class="ui-button button-quiet"
-          title="Reset to the beginning"
-          @click="$emit('reset')"
-        >
-          <AppIcon name="reset" /> Reset
-        </button>
-      </div>
-      <div class="timeline-area">
-        <div class="timeline-labels">
-          <label :for="timelineId">Playback position</label>
-          <span class="playback-time" role="timer" aria-label="Playback time" aria-live="off">
-            <strong>{{ seconds(state.positionMs) }} s</strong>
-            <span> / {{ seconds(state.durationMs) }} s</span>
-          </span>
-        </div>
-        <input
-          :id="timelineId"
-          type="range"
-          min="0"
-          :max="state.durationMs"
-          step="any"
-          :value="state.positionMs"
-          :disabled="state.durationMs === 0"
-          :aria-valuetext="`${seconds(state.positionMs)} of ${seconds(state.durationMs)} seconds`"
-          :style="{
-            '--bt-progress': `${state.durationMs ? (state.positionMs / state.durationMs) * 100 : 0}%`,
-          }"
-          @input="$emit('seek', Number(($event.target as HTMLInputElement).value))"
+                ? 'reset'
+                : 'play'
+          "
         />
-      </div>
-      <label class="speed-control">
-        Speed
-        <select
-          class="ui-select"
-          aria-label="Playback speed"
-          :value="state.speed"
-          @change="$emit('setSpeed', Number(($event.target as HTMLSelectElement).value))"
-        >
-          <option v-for="speed in PLAYBACK_SPEEDS" :key="speed" :value="speed">{{ speed }}×</option>
-        </select>
-      </label>
+      </button>
+      <button
+        type="button"
+        class="ui-button transport-button step-button"
+        aria-label="Next change"
+        title="Pause and jump to the next recorded status change. Hold to step progressively faster."
+        @pointerdown="startRepeating($event, () => $emit('stepForward'))"
+        @pointerleave="releasePointer"
+        @click="step($event, () => $emit('stepForward'))"
+      >
+        <AppIcon name="next" />
+      </button>
+    </div>
+    <label :for="timelineId" class="sr-only">Playback position</label>
+    <input
+      :id="timelineId"
+      type="range"
+      min="0"
+      :max="state.durationMs"
+      step="any"
+      :value="state.positionMs"
+      :disabled="state.durationMs === 0"
+      :aria-valuetext="`${seconds(state.positionMs)} of ${seconds(state.durationMs)} seconds`"
+      :style="{
+        '--bt-progress': `${state.durationMs ? (state.positionMs / state.durationMs) * 100 : 0}%`,
+      }"
+      @input="$emit('seek', Number(($event.target as HTMLInputElement).value))"
+    />
+    <span class="playback-time" role="timer" aria-label="Playback time" aria-live="off">
+      <strong>{{ seconds(state.positionMs) }} s</strong>
+      <span> / {{ seconds(state.durationMs) }} s</span>
+    </span>
+    <div class="playback-settings">
+      <button
+        type="button"
+        class="ui-button transport-button speed-control"
+        :aria-label="`Playback speed ${state.speed}×`"
+        :title="`Playback speed: ${state.speed}×. Click to change to ${nextSpeed}×`"
+        @click="$emit('setSpeed', nextSpeed)"
+      >
+        {{ state.speed }}×
+      </button>
+      <button
+        type="button"
+        class="ui-button transport-button reset-button"
+        aria-label="Reset"
+        title="Reset to the beginning"
+        @click="$emit('reset')"
+      >
+        <AppIcon name="reset" />
+      </button>
     </div>
   </fieldset>
 </template>
 
 <style scoped>
 .playback-controls {
-  container: bt-playback / inline-size;
+  display: grid;
+  grid-template-areas: 'actions timeline time settings';
+  grid-template-columns: auto minmax(80px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 12px;
   min-width: 0;
   margin: 0;
-  padding: 8px 12px;
+  padding: 1px 8px;
   border: 1px solid var(--bt-border);
   border-radius: 4px;
-  background: var(--bt-surface);
+  background: var(--bt-overlay-surface);
 }
-.recording-heading,
-.recording-label,
-.timeline-labels,
 .playback-actions,
-.speed-control {
+.playback-settings {
   display: flex;
   align-items: center;
-}
-.recording-heading {
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-.recording-label {
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  font-size: 12px;
-  line-height: 16px;
-}
-.recording-label strong {
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 500;
-}
-.recording-label > span,
-.timeline-labels,
-.speed-control {
-  color: var(--bt-text-secondary);
-}
-.transport-status {
-  color: var(--bt-text-secondary);
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
-}
-.transport-status.playing {
-  color: var(--bt-primary);
-}
-.transport-strip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
+  gap: 4px;
 }
 .playback-actions {
-  gap: 0.25rem;
-}
-.play-button {
-  min-width: 6rem;
-}
-.timeline-area {
+  grid-area: actions;
+  flex-wrap: wrap;
   min-width: 0;
 }
-.timeline-labels {
-  justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.75rem;
+.playback-settings {
+  grid-area: settings;
+}
+.playback-controls .transport-button {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+}
+.step-button {
+  touch-action: none;
 }
 .playback-time {
-  flex-shrink: 0;
-  font-size: 0.875rem;
+  grid-area: time;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   font-family: var(--bt-font-mono);
-  min-width: 21ch;
-  text-align: right;
+  overflow-wrap: anywhere;
 }
 .playback-time strong {
   color: var(--bt-text);
   font-weight: 500;
 }
 .speed-control {
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-.speed-control select {
-  min-width: 4.5rem;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 input[type='range'] {
+  grid-area: timeline;
   display: block;
   appearance: none;
   width: 100%;
-  height: 30px;
+  height: 32px;
   margin: 0;
   border-radius: 4px;
   background: transparent;
@@ -241,34 +268,20 @@ input[type='range']::-moz-range-thumb {
 input:disabled {
   opacity: 0.5;
 }
-@container bt-playback (max-width: 700px) {
-  .transport-strip {
+@container bt-playback (max-width: 560px) {
+  .playback-controls {
+    grid-template-areas: 'actions actions' 'timeline timeline' 'time settings';
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.75rem;
-  }
-  .timeline-area {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-  .recording-label {
-    gap: 0.125rem 0.5rem;
-  }
-  .recording-label > span {
-    font-size: 0.75rem;
-  }
-  input[type='range'] {
-    height: 40px;
+    column-gap: 8px;
   }
 }
-@container bt-playback (max-width: 380px) {
-  .speed-control {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.125rem;
+@media (pointer: coarse) {
+  .playback-controls .transport-button {
+    min-width: 44px;
+    min-height: 44px;
   }
-  .timeline-labels {
-    align-items: flex-start;
-    flex-direction: column;
+  input[type='range'] {
+    height: 44px;
   }
 }
 </style>
